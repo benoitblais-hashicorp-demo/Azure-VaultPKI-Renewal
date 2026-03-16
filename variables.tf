@@ -1,13 +1,3 @@
-variable "location" {
-  type        = string
-  description = "(Required) Azure region where the demo resources are deployed"
-}
-
-variable "subscription_id" {
-  type        = string
-  description = "(Required) Azure subscription ID used by the AzureRM provider"
-}
-
 variable "app_gateway_subnet_prefix" {
   type        = string
   description = "(Optional) CIDR prefix used by the dedicated Application Gateway subnet"
@@ -20,6 +10,12 @@ variable "key_vault_certificate_name" {
   default     = "demo-tls-cert"
 }
 
+variable "location" {
+  type        = string
+  description = "(Optional) Azure region where the demo resources are deployed"
+  default     = "canadacentral"
+}
+
 variable "name_prefix" {
   type        = string
   description = "(Optional) Prefix used for Azure resource naming"
@@ -30,6 +26,11 @@ variable "resource_group_name" {
   type        = string
   description = "(Optional) Resource group name for all demo resources"
   default     = "rg-vault-pki-renewal"
+}
+
+variable "subscription_id" {
+  type        = string
+  description = "(Required) Azure subscription ID used by the AzureRM provider"
 }
 
 variable "tags" {

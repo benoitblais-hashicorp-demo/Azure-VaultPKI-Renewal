@@ -42,16 +42,16 @@ resource "azurerm_user_assigned_identity" "app_gateway" {
 }
 
 resource "azurerm_key_vault" "this" {
-  name                          = substr(replace("${local.name_prefix}kv", "-", ""), 0, 24)
-  location                      = azurerm_resource_group.this.location
-  resource_group_name           = azurerm_resource_group.this.name
-  tenant_id                     = data.azurerm_client_config.current.tenant_id
-  sku_name                      = "standard"
-  enabled_for_deployment        = true
+  name                            = substr(replace("${local.name_prefix}kv", "-", ""), 0, 24)
+  location                        = azurerm_resource_group.this.location
+  resource_group_name             = azurerm_resource_group.this.name
+  tenant_id                       = data.azurerm_client_config.current.tenant_id
+  sku_name                        = "standard"
+  enabled_for_deployment          = true
   enabled_for_template_deployment = true
-  purge_protection_enabled      = false
-  soft_delete_retention_days    = 7
-  tags                          = var.tags
+  purge_protection_enabled        = false
+  soft_delete_retention_days      = 7
+  tags                            = var.tags
 }
 
 resource "azurerm_key_vault_access_policy" "terraform_identity" {

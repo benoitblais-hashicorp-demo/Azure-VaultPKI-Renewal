@@ -64,34 +64,15 @@ variable "azure_devops_jwt_user_claim" {
   default     = "sub"
 }
 
-variable "bootstrap_certificate_from_vault" {
-  type        = bool
-  description = "(Optional) When true, bootstraps the initial Key Vault certificate from Vault PKI instead of generating a self-signed certificate"
-  default     = true
-}
-
-variable "bootstrap_pfx_password" {
-  type        = string
-  description = "(Required when bootstrap_certificate_from_vault=true) Password used for the PKCS#12 bundle imported to Key Vault"
-  sensitive   = true
-  default     = ""
-}
-
-variable "enable_bootstrap_pfx_password_kv_mount" {
-  type        = bool
-  description = "(Optional) When true, creates the KVv2 mount used to store generated bootstrap PFX passwords"
-  default     = true
-}
-
 variable "bootstrap_pfx_password_kv_mount" {
   type        = string
-  description = "(Optional) Vault KVv2 mount path where generated bootstrap PFX password is stored"
+  description = "(Optional) Vault KVv2 mount path where the generated bootstrap PFX password is stored"
   default     = "kvv2"
 }
 
 variable "bootstrap_pfx_password_kv_path" {
   type        = string
-  description = "(Optional) Vault KVv2 secret path where generated bootstrap PFX password is stored"
+  description = "(Optional) Vault KVv2 secret path where the generated bootstrap PFX password is stored"
   default     = "azure-vaultpki-renewal/bootstrap"
 }
 
@@ -99,12 +80,6 @@ variable "enable_azure_devops_jwt_auth" {
   type        = bool
   description = "(Optional) When true, creates the Vault JWT role and policy for Azure DevOps pipeline authentication"
   default     = true
-}
-
-variable "generate_bootstrap_pfx_password" {
-  type        = bool
-  description = "(Optional) When true and bootstrap_pfx_password is empty, generates a random PFX password and stores it in Vault KVv2"
-  default     = false
 }
 
 variable "initial_certificate_common_name" {
@@ -156,7 +131,7 @@ variable "tags" {
 
 variable "vault_addr" {
   type        = string
-  description = "(Required when bootstrap_certificate_from_vault=true) Vault address used for initial certificate issuance"
+  description = "(Required) Vault address used for initial certificate issuance"
   default     = ""
 }
 
@@ -180,7 +155,7 @@ variable "vault_pki_role" {
 
 variable "vault_token" {
   type        = string
-  description = "(Required when bootstrap_certificate_from_vault=true) Vault token used for initial certificate issuance"
+  description = "(Optional) Vault token used for initial certificate issuance. Leave empty to use JWT/OIDC auth."
   sensitive   = true
   default     = ""
 }

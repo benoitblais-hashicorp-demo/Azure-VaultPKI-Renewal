@@ -1,8 +1,7 @@
 locals {
   bootstrap_key_vault_secret_id    = "https://${azurerm_key_vault.this.name}.vault.azure.net/secrets/${var.key_vault_certificate_name}"
-  bootstrap_pfx_password_effective = var.bootstrap_pfx_password != "" ? var.bootstrap_pfx_password : (var.generate_bootstrap_pfx_password ? random_password.bootstrap_pfx_password[0].result : "")
+  bootstrap_pfx_password_effective = random_password.bootstrap_pfx_password.result
   create_azure_devops_jwt_auth     = var.enable_azure_devops_jwt_auth && var.vault_pki_path != "" && var.vault_pki_role != ""
-  create_bootstrap_password_secret = var.bootstrap_certificate_from_vault && var.generate_bootstrap_pfx_password && var.bootstrap_pfx_password == ""
   name_prefix                      = lower(replace(var.name_prefix, "_", "-"))
 }
 
@@ -127,36 +126,28 @@ resource "vault_jwt_auth_backend_role" "azure_devops" {
 }
 
 resource "random_password" "bootstrap_pfx_password" {
-  count = local.create_bootstrap_password_secret ? 1 : 0
-
   length           = 32
   special          = true
   override_special = "!@#%^*-_=+"
 }
 
 resource "vault_mount" "bootstrap_pfx_password_kvv2" {
-  count = local.create_bootstrap_password_secret && var.enable_bootstrap_pfx_password_kv_mount ? 1 : 0
-
   path = var.bootstrap_pfx_password_kv_mount
   type = "kv-v2"
 }
 
 resource "vault_kv_secret_v2" "bootstrap_pfx_password" {
-  count = local.create_bootstrap_password_secret ? 1 : 0
-
   mount = var.bootstrap_pfx_password_kv_mount
   name  = var.bootstrap_pfx_password_kv_path
 
   data_json = jsonencode({
-    bootstrap_pfx_password = random_password.bootstrap_pfx_password[0].result
+    bootstrap_pfx_password = random_password.bootstrap_pfx_password.result
   })
 
   depends_on = [vault_mount.bootstrap_pfx_password_kvv2]
 }
 
 resource "null_resource" "bootstrap_certificate_from_vault" {
-  count = var.bootstrap_certificate_from_vault ? 1 : 0
-
   triggers = {
     cert_common_name = var.initial_certificate_common_name
     cert_name        = var.key_vault_certificate_name
@@ -175,8 +166,8 @@ resource "null_resource" "bootstrap_certificate_from_vault" {
     }
 
     precondition {
-      condition     = local.bootstrap_pfx_password_effective != ""
-      error_message = "Set bootstrap_pfx_password, or set generate_bootstrap_pfx_password=true and provide KVv2 mount/path variables."
+      condition     = var.bootstrap_pfx_password_kv_mount != "" && var.bootstrap_pfx_password_kv_path != ""
+      error_message = "Set bootstrap_pfx_password_kv_mount and bootstrap_pfx_password_kv_path for generated bootstrap password storage."
     }
 
     precondition {
@@ -202,64 +193,6 @@ resource "null_resource" "bootstrap_certificate_from_vault" {
       VAULT_PKI_PATH           = var.vault_pki_path
       VAULT_PKI_ROLE           = var.vault_pki_role
       VAULT_TOKEN              = var.vault_token
-    }
-  }
-
-  depends_on = [azurerm_key_vault_access_policy.terraform_identity]
-}
-
-resource "azurerm_key_vault_certificate" "bootstrap" {
-  count = var.bootstrap_certificate_from_vault ? 0 : 1
-
-  name         = var.key_vault_certificate_name
-  key_vault_id = azurerm_key_vault.this.id
-
-  certificate_policy {
-    issuer_parameters {
-      name = "Self"
-    }
-
-    key_properties {
-      exportable = true
-      key_size   = 2048
-      key_type   = "RSA"
-      reuse_key  = true
-    }
-
-    secret_properties {
-      content_type = "application/x-pkcs12"
-    }
-
-    x509_certificate_properties {
-      subject            = "CN=${var.initial_certificate_common_name}"
-      validity_in_months = 12
-
-      key_usage = [
-        "cRLSign",
-        "dataEncipherment",
-        "digitalSignature",
-        "keyAgreement",
-        "keyCertSign",
-        "keyEncipherment"
-      ]
-
-      extended_key_usage = [
-        "1.3.6.1.5.5.7.3.1"
-      ]
-
-      subject_alternative_names {
-        dns_names = [var.initial_certificate_common_name]
-      }
-    }
-
-    lifetime_action {
-      action {
-        action_type = "AutoRenew"
-      }
-
-      trigger {
-        days_before_expiry = 30
-      }
     }
   }
 
@@ -313,7 +246,7 @@ resource "azurerm_application_gateway" "this" {
 
   ssl_certificate {
     name                = "tls-from-key-vault"
-    key_vault_secret_id = var.bootstrap_certificate_from_vault ? local.bootstrap_key_vault_secret_id : azurerm_key_vault_certificate.bootstrap[0].versionless_secret_id
+    key_vault_secret_id = local.bootstrap_key_vault_secret_id
   }
 
   http_listener {
@@ -340,7 +273,6 @@ resource "azurerm_application_gateway" "this" {
 
   depends_on = [
     null_resource.bootstrap_certificate_from_vault,
-    azurerm_key_vault_access_policy.app_gateway_identity,
-    azurerm_key_vault_certificate.bootstrap
+    azurerm_key_vault_access_policy.app_gateway_identity
   ]
 }

@@ -39,7 +39,9 @@ stages:
             env:
               VAULT_ADDR: $(VAULT_ADDR)
               VAULT_NAMESPACE: $(VAULT_NAMESPACE)
-              VAULT_TOKEN: $(VAULT_TOKEN)
+              VAULT_AUTH_PATH: $(VAULT_AUTH_PATH)
+              VAULT_AUTH_ROLE: $(VAULT_AUTH_ROLE)
+              VAULT_JWT_AUDIENCE: $(VAULT_JWT_AUDIENCE)
               VAULT_PKI_PATH: $(VAULT_PKI_PATH)
               VAULT_PKI_ROLE: $(VAULT_PKI_ROLE)
               CERT_COMMON_NAME: $(CERT_COMMON_NAME)
@@ -47,3 +49,4 @@ stages:
               AZURE_KEYVAULT_NAME: $(AZURE_KEYVAULT_NAME)
               AZURE_KEYVAULT_CERT_NAME: $(AZURE_KEYVAULT_CERT_NAME)
               PFX_PASSWORD: $(PFX_PASSWORD)
+              SYSTEM_ACCESSTOKEN: $(System.AccessToken)

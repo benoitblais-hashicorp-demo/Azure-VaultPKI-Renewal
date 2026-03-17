@@ -106,6 +106,10 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.64.0)
 
+- <a name="requirement_null"></a> [null](#requirement\_null) (~> 3.2)
+
+- <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.7)
+
 - <a name="requirement_vault"></a> [vault](#requirement\_vault) (~> 5.8.0)
 
 ## Modules
@@ -133,6 +137,164 @@ Description: (Optional) CIDR prefix used by the dedicated Application Gateway su
 Type: `string`
 
 Default: `"10.20.1.0/24"`
+
+### <a name="input_azure_devops_jwt_backend_description"></a> [azure\_devops\_jwt\_backend\_description](#input\_azure\_devops\_jwt\_backend\_description)
+
+Description: (Optional) Description for the Azure DevOps JWT/OIDC auth backend in Vault
+
+Type: `string`
+
+Default: `"JWT/OIDC auth backend for Azure DevOps pipelines"`
+
+### <a name="input_azure_devops_jwt_backend_path"></a> [azure\_devops\_jwt\_backend\_path](#input\_azure\_devops\_jwt\_backend\_path)
+
+Description: (Optional) Path of the existing Azure DevOps JWT/OIDC auth backend in Vault
+
+Type: `string`
+
+Default: `"jwt_azure_devops"`
+
+### <a name="input_azure_devops_jwt_bound_audiences"></a> [azure\_devops\_jwt\_bound\_audiences](#input\_azure\_devops\_jwt\_bound\_audiences)
+
+Description: (Optional) Accepted audience claims for Azure DevOps OIDC tokens
+
+Type: `list(string)`
+
+Default:
+
+```json
+[
+  "vault.workload.identity"
+]
+```
+
+### <a name="input_azure_devops_jwt_bound_claims"></a> [azure\_devops\_jwt\_bound\_claims](#input\_azure\_devops\_jwt\_bound\_claims)
+
+Description: (Optional) Additional bound claims for the Azure DevOps JWT role
+
+Type: `map(string)`
+
+Default: `{}`
+
+### <a name="input_azure_devops_jwt_bound_issuer"></a> [azure\_devops\_jwt\_bound\_issuer](#input\_azure\_devops\_jwt\_bound\_issuer)
+
+Description: (Optional) Expected issuer claim for Azure DevOps OIDC tokens
+
+Type: `string`
+
+Default: `"https://vstoken.dev.azure.com"`
+
+### <a name="input_azure_devops_jwt_discovery_url"></a> [azure\_devops\_jwt\_discovery\_url](#input\_azure\_devops\_jwt\_discovery\_url)
+
+Description: (Optional) OIDC discovery URL used by Vault to validate Azure DevOps tokens
+
+Type: `string`
+
+Default: `"https://vstoken.dev.azure.com"`
+
+### <a name="input_azure_devops_jwt_role_name"></a> [azure\_devops\_jwt\_role\_name](#input\_azure\_devops\_jwt\_role\_name)
+
+Description: (Optional) Vault JWT role name used by Azure DevOps pipeline login
+
+Type: `string`
+
+Default: `"jwt_azure_devops_role"`
+
+### <a name="input_azure_devops_jwt_token_max_ttl"></a> [azure\_devops\_jwt\_token\_max\_ttl](#input\_azure\_devops\_jwt\_token\_max\_ttl)
+
+Description: (Optional) Maximum lifetime in seconds for Vault tokens issued to Azure DevOps JWT logins
+
+Type: `number`
+
+Default: `600`
+
+### <a name="input_azure_devops_jwt_token_ttl"></a> [azure\_devops\_jwt\_token\_ttl](#input\_azure\_devops\_jwt\_token\_ttl)
+
+Description: (Optional) Default lifetime in seconds for Vault tokens issued to Azure DevOps JWT logins
+
+Type: `number`
+
+Default: `300`
+
+### <a name="input_azure_devops_jwt_user_claim"></a> [azure\_devops\_jwt\_user\_claim](#input\_azure\_devops\_jwt\_user\_claim)
+
+Description: (Optional) JWT claim used as user identity in the Vault Azure DevOps JWT role
+
+Type: `string`
+
+Default: `"sub"`
+
+### <a name="input_bootstrap_certificate_from_vault"></a> [bootstrap\_certificate\_from\_vault](#input\_bootstrap\_certificate\_from\_vault)
+
+Description: (Optional) When true, bootstraps the initial Key Vault certificate from Vault PKI instead of generating a self-signed certificate
+
+Type: `bool`
+
+Default: `true`
+
+### <a name="input_bootstrap_pfx_password"></a> [bootstrap\_pfx\_password](#input\_bootstrap\_pfx\_password)
+
+Description: (Required when bootstrap\_certificate\_from\_vault=true) Password used for the PKCS#12 bundle imported to Key Vault
+
+Type: `string`
+
+Default: `""`
+
+### <a name="input_bootstrap_pfx_password_kv_mount"></a> [bootstrap\_pfx\_password\_kv\_mount](#input\_bootstrap\_pfx\_password\_kv\_mount)
+
+Description: (Optional) Vault KVv2 mount path where generated bootstrap PFX password is stored
+
+Type: `string`
+
+Default: `"kvv2"`
+
+### <a name="input_bootstrap_pfx_password_kv_path"></a> [bootstrap\_pfx\_password\_kv\_path](#input\_bootstrap\_pfx\_password\_kv\_path)
+
+Description: (Optional) Vault KVv2 secret path where generated bootstrap PFX password is stored
+
+Type: `string`
+
+Default: `"azure-vaultpki-renewal/bootstrap"`
+
+### <a name="input_enable_azure_devops_jwt_auth"></a> [enable\_azure\_devops\_jwt\_auth](#input\_enable\_azure\_devops\_jwt\_auth)
+
+Description: (Optional) When true, creates the Vault JWT role and policy for Azure DevOps pipeline authentication
+
+Type: `bool`
+
+Default: `true`
+
+### <a name="input_enable_bootstrap_pfx_password_kv_mount"></a> [enable\_bootstrap\_pfx\_password\_kv\_mount](#input\_enable\_bootstrap\_pfx\_password\_kv\_mount)
+
+Description: (Optional) When true, creates the KVv2 mount used to store generated bootstrap PFX passwords
+
+Type: `bool`
+
+Default: `true`
+
+### <a name="input_generate_bootstrap_pfx_password"></a> [generate\_bootstrap\_pfx\_password](#input\_generate\_bootstrap\_pfx\_password)
+
+Description: (Optional) When true and bootstrap\_pfx\_password is empty, generates a random PFX password and stores it in Vault KVv2
+
+Type: `bool`
+
+Default: `false`
+
+### <a name="input_initial_certificate_common_name"></a> [initial\_certificate\_common\_name](#input\_initial\_certificate\_common\_name)
+
+Description: (Optional) Common Name requested from Vault PKI for the initial bootstrap certificate
+
+Type: `string`
+
+Default: `"appgw.demo.example.com"`
+
+### <a name="input_initial_certificate_ttl"></a> [initial\_certificate\_ttl](#input\_initial\_certificate\_ttl)
+
+Description: (Optional) TTL sent to Vault PKI for the initial bootstrap certificate
+
+Type: `string`
+
+Default: `"24h"`
 
 ### <a name="input_key_vault_certificate_name"></a> [key\_vault\_certificate\_name](#input\_key\_vault\_certificate\_name)
 
@@ -174,6 +336,46 @@ Type: `map(string)`
 
 Default: `{}`
 
+### <a name="input_vault_addr"></a> [vault\_addr](#input\_vault\_addr)
+
+Description: (Required when bootstrap\_certificate\_from\_vault=true) Vault address used for initial certificate issuance
+
+Type: `string`
+
+Default: `""`
+
+### <a name="input_vault_namespace"></a> [vault\_namespace](#input\_vault\_namespace)
+
+Description: (Optional) Vault namespace used for initial certificate issuance
+
+Type: `string`
+
+Default: `""`
+
+### <a name="input_vault_pki_path"></a> [vault\_pki\_path](#input\_vault\_pki\_path)
+
+Description: (Required when bootstrap\_certificate\_from\_vault=true) Vault PKI mount path used for certificate issuance
+
+Type: `string`
+
+Default: `""`
+
+### <a name="input_vault_pki_role"></a> [vault\_pki\_role](#input\_vault\_pki\_role)
+
+Description: (Required when bootstrap\_certificate\_from\_vault=true) Vault PKI role used for certificate issuance
+
+Type: `string`
+
+Default: `""`
+
+### <a name="input_vault_token"></a> [vault\_token](#input\_vault\_token)
+
+Description: (Required when bootstrap\_certificate\_from\_vault=true) Vault token used for initial certificate issuance
+
+Type: `string`
+
+Default: `""`
+
 ### <a name="input_vnet_address_space"></a> [vnet\_address\_space](#input\_vnet\_address\_space)
 
 Description: (Optional) Address space assigned to the demo virtual network
@@ -202,6 +404,13 @@ The following resources are used by this module:
 - [azurerm_subnet.app_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_user_assigned_identity.app_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
 - [azurerm_virtual_network.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
+- [null_resource.bootstrap_certificate_from_vault](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) (resource)
+- [random_password.bootstrap_pfx_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) (resource)
+- [vault_jwt_auth_backend.azure_devops](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/jwt_auth_backend) (resource)
+- [vault_jwt_auth_backend_role.azure_devops](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/jwt_auth_backend_role) (resource)
+- [vault_kv_secret_v2.bootstrap_pfx_password](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/kv_secret_v2) (resource)
+- [vault_mount.bootstrap_pfx_password_kvv2](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/mount) (resource)
+- [vault_policy.azure_devops_pki_issue](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/policy) (resource)
 - [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 
 ## Outputs
@@ -227,6 +436,22 @@ Description: Azure Key Vault name storing the TLS certificate
 ### <a name="output_resource_group_name"></a> [resource\_group\_name](#output\_resource\_group\_name)
 
 Description: Resource group that contains the demo resources
+
+### <a name="output_vault_azure_devops_jwt_backend_path"></a> [vault\_azure\_devops\_jwt\_backend\_path](#output\_vault\_azure\_devops\_jwt\_backend\_path)
+
+Description: Vault JWT/OIDC auth backend path for Azure DevOps pipeline logins
+
+### <a name="output_vault_azure_devops_jwt_role_name"></a> [vault\_azure\_devops\_jwt\_role\_name](#output\_vault\_azure\_devops\_jwt\_role\_name)
+
+Description: Vault JWT role name for Azure DevOps pipeline logins. Null when disabled.
+
+### <a name="output_vault_bootstrap_pfx_password_kv_mount"></a> [vault\_bootstrap\_pfx\_password\_kv\_mount](#output\_vault\_bootstrap\_pfx\_password\_kv\_mount)
+
+Description: Vault KVv2 mount used for generated bootstrap PFX password storage
+
+### <a name="output_vault_bootstrap_pfx_password_secret_path"></a> [vault\_bootstrap\_pfx\_password\_secret\_path](#output\_vault\_bootstrap\_pfx\_password\_secret\_path)
+
+Description: Vault KVv2 secret path storing generated bootstrap PFX password. Null when not generated by Terraform.
 
 <!-- markdownlint-enable -->
 # External Documentation

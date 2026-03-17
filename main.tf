@@ -1,8 +1,7 @@
 locals {
-  bootstrap_key_vault_secret_id    = "https://${azurerm_key_vault.this.name}.vault.azure.net/secrets/${var.key_vault_certificate_name}"
-  bootstrap_pfx_password_effective = random_password.bootstrap_pfx_password.result
-  create_azure_devops_jwt_auth     = var.enable_azure_devops_jwt_auth && var.vault_pki_path != "" && var.vault_pki_role != ""
-  name_prefix                      = lower(replace(var.name_prefix, "_", "-"))
+  bootstrap_key_vault_secret_id = "https://${azurerm_key_vault.this.name}.vault.azure.net/secrets/${var.key_vault_certificate_name}"
+  create_azure_devops_jwt_auth  = var.enable_azure_devops_jwt_auth && var.vault_pki_path != "" && var.vault_pki_role != ""
+  name_prefix                   = lower(replace(var.name_prefix, "_", "-"))
 }
 
 data "azurerm_client_config" "current" {}
@@ -147,52 +146,46 @@ resource "vault_kv_secret_v2" "bootstrap_pfx_password" {
   depends_on = [vault_mount.bootstrap_pfx_password_kvv2]
 }
 
-resource "null_resource" "bootstrap_certificate_from_vault" {
-  triggers = {
-    cert_common_name = var.initial_certificate_common_name
-    cert_name        = var.key_vault_certificate_name
-    cert_ttl         = var.initial_certificate_ttl
-    key_vault_name   = azurerm_key_vault.this.name
-    vault_addr       = var.vault_addr
-    vault_namespace  = var.vault_namespace
-    vault_pki_path   = var.vault_pki_path
-    vault_pki_role   = var.vault_pki_role
-  }
+resource "vault_pki_secret_backend_cert" "bootstrap" {
+  backend     = var.vault_pki_path
+  name        = var.vault_pki_role
+  common_name = var.initial_certificate_common_name
+  ttl         = var.initial_certificate_ttl
+  format      = "pem"
 
   lifecycle {
     precondition {
-      condition     = var.vault_addr != "" && var.vault_pki_path != "" && var.vault_pki_role != ""
-      error_message = "When bootstrap_certificate_from_vault=true, set vault_addr, vault_pki_path, and vault_pki_role."
-    }
-
-    precondition {
-      condition     = var.bootstrap_pfx_password_kv_mount != "" && var.bootstrap_pfx_password_kv_path != ""
-      error_message = "Set bootstrap_pfx_password_kv_mount and bootstrap_pfx_password_kv_path for generated bootstrap password storage."
-    }
-
-    precondition {
-      condition     = var.vault_token != "" || local.create_azure_devops_jwt_auth
-      error_message = "Set vault_token for bootstrap, or configure Azure DevOps JWT auth resources in Vault."
+      condition     = var.vault_pki_path != "" && var.vault_pki_role != ""
+      error_message = "Set vault_pki_path and vault_pki_role for bootstrap certificate issuance."
     }
   }
+}
 
-  provisioner "local-exec" {
-    command = "python \"${path.module}/scripts/renew_certificate.py\""
+resource "azurerm_key_vault_certificate" "bootstrap" {
+  name         = var.key_vault_certificate_name
+  key_vault_id = azurerm_key_vault.this.id
 
-    environment = {
-      AZURE_KEYVAULT_CERT_NAME = var.key_vault_certificate_name
-      AZURE_KEYVAULT_NAME      = azurerm_key_vault.this.name
-      CERT_COMMON_NAME         = var.initial_certificate_common_name
-      CERT_TTL                 = var.initial_certificate_ttl
-      PFX_PASSWORD             = local.bootstrap_pfx_password_effective
-      VAULT_AUTH_PATH          = var.azure_devops_jwt_backend_path
-      VAULT_AUTH_ROLE          = var.azure_devops_jwt_role_name
-      VAULT_JWT_AUDIENCE       = length(var.azure_devops_jwt_bound_audiences) > 0 ? var.azure_devops_jwt_bound_audiences[0] : "vault.workload.identity"
-      VAULT_ADDR               = var.vault_addr
-      VAULT_NAMESPACE          = var.vault_namespace
-      VAULT_PKI_PATH           = var.vault_pki_path
-      VAULT_PKI_ROLE           = var.vault_pki_role
-      VAULT_TOKEN              = var.vault_token
+  certificate {
+    contents = base64encode(join("\n", compact(concat([
+      vault_pki_secret_backend_cert.bootstrap.private_key,
+      vault_pki_secret_backend_cert.bootstrap.certificate
+    ], try(vault_pki_secret_backend_cert.bootstrap.ca_chain, [])))))
+  }
+
+  certificate_policy {
+    issuer_parameters {
+      name = "Unknown"
+    }
+
+    key_properties {
+      exportable = true
+      key_size   = 2048
+      key_type   = "RSA"
+      reuse_key  = false
+    }
+
+    secret_properties {
+      content_type = "application/x-pem-file"
     }
   }
 
@@ -272,7 +265,7 @@ resource "azurerm_application_gateway" "this" {
   }
 
   depends_on = [
-    null_resource.bootstrap_certificate_from_vault,
+    azurerm_key_vault_certificate.bootstrap,
     azurerm_key_vault_access_policy.app_gateway_identity
   ]
 }

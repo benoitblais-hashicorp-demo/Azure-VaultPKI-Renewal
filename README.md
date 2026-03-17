@@ -354,19 +354,19 @@ Default: `""`
 
 ### <a name="input_vault_pki_path"></a> [vault\_pki\_path](#input\_vault\_pki\_path)
 
-Description: (Required when bootstrap\_certificate\_from\_vault=true) Vault PKI mount path used for certificate issuance
+Description: (Optional) Vault PKI mount path used for certificate issuance
 
 Type: `string`
 
-Default: `""`
+Default: `"pki-int"`
 
 ### <a name="input_vault_pki_role"></a> [vault\_pki\_role](#input\_vault\_pki\_role)
 
-Description: (Required when bootstrap\_certificate\_from\_vault=true) Vault PKI role used for certificate issuance
+Description: (Optional) Vault PKI role used for certificate issuance
 
 Type: `string`
 
-Default: `""`
+Default: `"gw-cert-issuer"`
 
 ### <a name="input_vault_token"></a> [vault\_token](#input\_vault\_token)
 

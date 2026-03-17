@@ -168,14 +168,14 @@ variable "vault_namespace" {
 
 variable "vault_pki_path" {
   type        = string
-  description = "(Required when bootstrap_certificate_from_vault=true) Vault PKI mount path used for certificate issuance"
-  default     = ""
+  description = "(Optional) Vault PKI mount path used for certificate issuance"
+  default     = "pki-int"
 }
 
 variable "vault_pki_role" {
   type        = string
-  description = "(Required when bootstrap_certificate_from_vault=true) Vault PKI role used for certificate issuance"
-  default     = ""
+  description = "(Optional) Vault PKI role used for certificate issuance"
+  default     = "gw-cert-issuer"
 }
 
 variable "vault_token" {

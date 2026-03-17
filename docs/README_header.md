@@ -96,3 +96,4 @@ This is relevant only when your workload terminates TLS directly on VMs that use
 - If you also have VM-based workloads, this same renewal pattern still helps because importing a renewed certificate to Key Vault enables the VM extension to fetch updated certificate versions.
 
 
+

@@ -66,6 +66,17 @@ az role assignment create \
   --scope "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RG_NAME"
 ```
 
+Grant your HCP Terraform agent identity enough scope to create/read the demo resource group and its resources.
+
+```bash
+# Use your actual agent principal object ID (from step 3) and subscription
+az role assignment create \
+  --assignee-object-id "$UAMI_PRINCIPAL_ID" \
+  --assignee-principal-type ServicePrincipal \
+  --role "Contributor" \
+  --scope "/subscriptions/$SUBSCRIPTION_ID"
+```
+
 Optional (only if Terraform must manage role assignments itself):
 
 ```bash
@@ -238,6 +249,85 @@ Use outputs from your `HCPVault-PKI` deployment:
 - `jwt_hcp_role_name_azure`
 
 Note: `azure_auth_backend_path` is for Azure DevOps JWT/OIDC backend. `TFC_VAULT_RUN_ROLE` for HCP Terraform workspace runs should use the HCP JWT role output.
+
+### 7.1 Required Vault Access for This Terraform Code
+
+The `vault_jwt_auth_backend.azure_devops` resource reads and tunes the auth mount at:
+
+- `sys/mounts/auth/jwt_azure_devops`
+- `sys/mounts/auth/jwt_azure_devops/tune`
+
+If your workspace role does not have access, you will get a `403 permission denied` on `.../sys/mounts/auth/jwt_azure_devops/tune`.
+
+Run the following once with a Vault admin token in the same namespace used by the workspace (`TFC_VAULT_NAMESPACE`):
+
+```bash
+export VAULT_ADDR="<vault-cluster-url>"
+export VAULT_NAMESPACE="<namespace_path>"
+
+vault login <VAULT_ADMIN_TOKEN>
+
+cat > tfc-azure-vaultpki.hcl <<'HCL'
+path "sys/mounts/auth/jwt_azure_devops" {
+  capabilities = ["create", "read", "update", "delete", "list"]
+}
+
+path "sys/mounts/auth/jwt_azure_devops/tune" {
+  capabilities = ["create", "read", "update"]
+}
+
+path "auth/jwt_azure_devops/*" {
+  capabilities = ["create", "read", "update", "delete", "list"]
+}
+
+path "sys/mounts/kvv2_azure_devops" {
+  capabilities = ["create", "read", "update", "delete", "list"]
+}
+
+path "sys/mounts/kvv2_azure_devops/tune" {
+  capabilities = ["create", "read", "update"]
+}
+
+path "kvv2_azure_devops/*" {
+  capabilities = ["create", "read", "update", "delete", "list"]
+}
+
+path "pki-int/roles/gw-cert-issuer" {
+  capabilities = ["create", "read", "update", "delete", "list"]
+}
+
+path "pki-int/issue/gw-cert-issuer" {
+  capabilities = ["create", "update", "read"]
+}
+HCL
+
+vault policy write tfc-azure-vaultpki tfc-azure-vaultpki.hcl
+```
+
+Attach that policy to the workspace JWT run role (`TFC_VAULT_RUN_ROLE`):
+
+```bash
+# Replace with your workspace run role and JWT auth mount path.
+export TFC_VAULT_RUN_ROLE="<role_name>"
+export TFC_JWT_AUTH_MOUNT="jwt"
+
+vault read auth/${TFC_JWT_AUTH_MOUNT}/role/${TFC_VAULT_RUN_ROLE}
+vault write auth/${TFC_JWT_AUTH_MOUNT}/role/${TFC_VAULT_RUN_ROLE} \
+  token_policies="tfc-azure-vaultpki" \
+  role_type="jwt" \
+  user_claim="sub" \
+  bound_audiences="vault.workload.identity"
+```
+
+Verify required endpoints are accessible:
+
+```bash
+vault read sys/mounts/auth/jwt_azure_devops/tune
+vault read sys/mounts/kvv2_azure_devops/tune || true
+vault read pki-int/roles/gw-cert-issuer || true
+```
+
+If you cannot grant this access yet, set `enable_azure_devops_jwt_auth=false` temporarily so Terraform skips JWT backend/role creation.
 
 ## 8) Validation
 

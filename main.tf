@@ -154,6 +154,13 @@ resource "vault_kv_secret_v2" "bootstrap_pfx_password" {
   depends_on = [vault_mount.bootstrap_pfx_password_kvv2]
 }
 
+resource "vault_pki_secret_backend_role" "bootstrap" {
+  backend        = var.vault_pki_path
+  name           = var.vault_pki_role
+  allow_any_name = true
+  max_ttl        = var.initial_certificate_ttl
+}
+
 resource "vault_pki_secret_backend_cert" "bootstrap" {
   backend     = var.vault_pki_path
   name        = var.vault_pki_role
@@ -167,6 +174,8 @@ resource "vault_pki_secret_backend_cert" "bootstrap" {
       error_message = "Set vault_pki_path and vault_pki_role for bootstrap certificate issuance."
     }
   }
+
+  depends_on = [vault_pki_secret_backend_role.bootstrap]
 }
 
 resource "azurerm_key_vault_certificate" "bootstrap" {

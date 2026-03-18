@@ -4,9 +4,18 @@ locals {
     vault_pki_secret_backend_cert.bootstrap.certificate,
     vault_pki_secret_backend_cert.bootstrap.private_key
   ]))
-  store_bootstrap_pfx_password = var.bootstrap_pfx_password_store_in_vault && trimspace(var.bootstrap_pfx_password_kv_mount) != "" && trimspace(var.bootstrap_pfx_password_kv_path) != ""
-  create_azure_devops_jwt_auth = var.enable_azure_devops_jwt_auth && var.vault_pki_path != "" && var.vault_pki_role != ""
-  name_prefix                  = lower(replace(var.name_prefix, "_", "-"))
+  create_azure_devops_pipeline = trimspace(var.azure_devops_project_name) != "" && (
+    (var.azure_devops_repository_type == "TfsGit" && trimspace(var.azure_devops_repository_name) != "") ||
+    (var.azure_devops_repository_type != "TfsGit" && trimspace(var.azure_devops_repository_id) != "")
+  )
+  azure_devops_pipeline_branch_name = trimspace(var.azure_devops_pipeline_branch_name) != "" ? var.azure_devops_pipeline_branch_name : (
+    var.azure_devops_repository_type == "TfsGit" ? try(data.azuredevops_git_repository.pipeline_repository[0].default_branch, "refs/heads/main") : "main"
+  )
+  azure_devops_pipeline_repo_id               = var.azure_devops_repository_type == "TfsGit" ? try(data.azuredevops_git_repository.pipeline_repository[0].id, "") : var.azure_devops_repository_id
+  azure_devops_pipeline_service_connection_id = contains(["GitHub", "GitHubEnterprise"], var.azure_devops_repository_type) ? var.azure_devops_repository_service_connection_id : null
+  store_bootstrap_pfx_password                = var.bootstrap_pfx_password_store_in_vault && trimspace(var.bootstrap_pfx_password_kv_mount) != "" && trimspace(var.bootstrap_pfx_password_kv_path) != ""
+  create_azure_devops_jwt_auth                = var.enable_azure_devops_jwt_auth && var.vault_pki_path != "" && var.vault_pki_role != ""
+  name_prefix                                 = lower(replace(var.name_prefix, "_", "-"))
 }
 
 resource "local_file" "azure_pipelines_yaml" {
@@ -18,6 +27,45 @@ resource "local_file" "azure_pipelines_yaml" {
 }
 
 data "azurerm_client_config" "current" {}
+
+data "azuredevops_project" "pipeline_project" {
+  count = local.create_azure_devops_pipeline ? 1 : 0
+
+  name = var.azure_devops_project_name
+}
+
+data "azuredevops_git_repository" "pipeline_repository" {
+  count = local.create_azure_devops_pipeline && var.azure_devops_repository_type == "TfsGit" ? 1 : 0
+
+  project_id = data.azuredevops_project.pipeline_project[0].id
+  name       = var.azure_devops_repository_name
+}
+
+resource "azuredevops_build_definition" "certificate_renewal" {
+  count = local.create_azure_devops_pipeline ? 1 : 0
+
+  project_id = data.azuredevops_project.pipeline_project[0].id
+  name       = var.azure_devops_pipeline_name
+  path       = var.azure_devops_pipeline_folder
+
+  ci_trigger {
+    use_yaml = true
+  }
+
+  repository {
+    repo_type             = var.azure_devops_repository_type
+    repo_id               = local.azure_devops_pipeline_repo_id
+    branch_name           = local.azure_devops_pipeline_branch_name
+    yml_path              = var.azure_devops_pipeline_yaml_path
+    service_connection_id = local.azure_devops_pipeline_service_connection_id
+  }
+
+  features {
+    skip_first_run = true
+  }
+
+  depends_on = [local_file.azure_pipelines_yaml]
+}
 
 resource "azurerm_resource_group" "this" {
   name     = var.resource_group_name

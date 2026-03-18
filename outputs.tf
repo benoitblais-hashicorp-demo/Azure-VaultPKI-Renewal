@@ -8,6 +8,16 @@ output "application_gateway_public_ip" {
   value       = azurerm_public_ip.app_gateway.ip_address
 }
 
+output "azure_devops_pipeline_id" {
+  description = "Azure DevOps build definition ID for the certificate renewal pipeline. Null when pipeline creation is not configured."
+  value       = try(azuredevops_build_definition.certificate_renewal[0].id, null)
+}
+
+output "azure_devops_pipeline_name" {
+  description = "Azure DevOps pipeline name for the certificate renewal pipeline. Null when pipeline creation is not configured."
+  value       = try(azuredevops_build_definition.certificate_renewal[0].name, null)
+}
+
 output "key_vault_certificate_name" {
   description = "Certificate name in Azure Key Vault updated by the renewal automation"
   value       = var.key_vault_certificate_name

@@ -168,11 +168,11 @@ resource "vault_pki_secret_backend_role" "bootstrap" {
 }
 
 resource "vault_pki_secret_backend_cert" "bootstrap" {
-  backend     = var.vault_pki_path
-  name        = var.vault_pki_role
-  common_name = var.initial_certificate_common_name
-  ttl         = var.initial_certificate_ttl
-  format      = "pem"
+  backend            = var.vault_pki_path
+  name               = var.vault_pki_role
+  common_name        = var.initial_certificate_common_name
+  ttl                = var.initial_certificate_ttl
+  format             = "pem"
   private_key_format = "pkcs8"
 
   lifecycle {

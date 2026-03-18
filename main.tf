@@ -13,17 +13,10 @@ locals {
   )
   azure_devops_pipeline_repo_id               = var.azure_devops_repository_type == "TfsGit" ? try(data.azuredevops_git_repository.pipeline_repository[0].id, "") : var.azure_devops_repository_id
   azure_devops_pipeline_service_connection_id = contains(["GitHub", "GitHubEnterprise"], var.azure_devops_repository_type) ? var.azure_devops_repository_service_connection_id : null
+  create_azure_automation_runbook             = var.enable_azure_automation_runbook
   store_bootstrap_pfx_password                = var.bootstrap_pfx_password_store_in_vault && trimspace(var.bootstrap_pfx_password_kv_mount) != "" && trimspace(var.bootstrap_pfx_password_kv_path) != ""
-  create_azure_devops_jwt_auth                = var.enable_azure_devops_jwt_auth && var.vault_pki_path != "" && var.vault_pki_role != ""
+  create_vault_jwt_auth                       = var.enable_azure_devops_jwt_auth && var.vault_pki_path != "" && var.vault_pki_role != ""
   name_prefix                                 = lower(replace(var.name_prefix, "_", "-"))
-}
-
-resource "local_file" "azure_pipelines_yaml" {
-  filename = "${path.module}/azure-pipelines.yml"
-  content = templatefile("${path.module}/templates/azure-pipelines.yml.tftpl", {
-    vault_addr      = var.vault_addr
-    vault_namespace = var.vault_namespace
-  })
 }
 
 data "azurerm_client_config" "current" {}
@@ -63,8 +56,6 @@ resource "azuredevops_build_definition" "certificate_renewal" {
   features {
     skip_first_run = true
   }
-
-  depends_on = [local_file.azure_pipelines_yaml]
 }
 
 resource "azurerm_resource_group" "this" {
@@ -149,10 +140,202 @@ resource "azurerm_key_vault_access_policy" "app_gateway_identity" {
   ]
 }
 
-resource "vault_policy" "azure_devops_pki_issue" {
-  count = local.create_azure_devops_jwt_auth ? 1 : 0
+resource "azurerm_key_vault_access_policy" "automation_identity" {
+  count = local.create_azure_automation_runbook ? 1 : 0
 
-  name = "${local.name_prefix}-azure-devops-pki-issue"
+  key_vault_id = azurerm_key_vault.this.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = azurerm_automation_account.certificate_renewal[0].identity[0].principal_id
+
+  certificate_permissions = [
+    "Create",
+    "Get",
+    "Import",
+    "List",
+    "Update"
+  ]
+
+  secret_permissions = [
+    "Get",
+    "List",
+    "Set"
+  ]
+}
+
+resource "azurerm_automation_account" "certificate_renewal" {
+  count = local.create_azure_automation_runbook ? 1 : 0
+
+  name                = var.azure_automation_account_name
+  location            = azurerm_resource_group.this.location
+  resource_group_name = azurerm_resource_group.this.name
+  sku_name            = "Basic"
+  tags                = var.tags
+
+  identity {
+    type = "SystemAssigned"
+  }
+}
+
+resource "azurerm_automation_runbook" "certificate_renewal" {
+  count = local.create_azure_automation_runbook ? 1 : 0
+
+  name                    = var.azure_automation_runbook_name
+  location                = azurerm_resource_group.this.location
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal[0].name
+  log_progress            = true
+  log_verbose             = var.azure_automation_runbook_log_verbose
+  runbook_type            = "Python3"
+  content                 = file("${path.module}/scripts/automation_runbook.py")
+}
+
+resource "azurerm_automation_variable_string" "cert_common_name" {
+  count = local.create_azure_automation_runbook ? 1 : 0
+
+  name                    = "CERT_COMMON_NAME"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal[0].name
+  value                   = var.initial_certificate_common_name
+}
+
+resource "azurerm_automation_variable_string" "cert_ttl" {
+  count = local.create_azure_automation_runbook ? 1 : 0
+
+  name                    = "CERT_TTL"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal[0].name
+  value                   = var.initial_certificate_ttl
+}
+
+resource "azurerm_automation_variable_string" "key_vault_cert_name" {
+  count = local.create_azure_automation_runbook ? 1 : 0
+
+  name                    = "AZURE_KEYVAULT_CERT_NAME"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal[0].name
+  value                   = var.key_vault_certificate_name
+}
+
+resource "azurerm_automation_variable_string" "key_vault_name" {
+  count = local.create_azure_automation_runbook ? 1 : 0
+
+  name                    = "AZURE_KEYVAULT_NAME"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal[0].name
+  value                   = azurerm_key_vault.this.name
+}
+
+resource "azurerm_automation_variable_string" "pfx_password" {
+  count = local.create_azure_automation_runbook ? 1 : 0
+
+  name                    = "PFX_PASSWORD"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal[0].name
+  value                   = random_password.bootstrap_pfx_password.result
+  encrypted               = true
+}
+
+resource "azurerm_automation_variable_string" "vault_addr" {
+  count = local.create_azure_automation_runbook ? 1 : 0
+
+  name                    = "VAULT_ADDR"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal[0].name
+  value                   = var.vault_addr
+}
+
+resource "azurerm_automation_variable_string" "vault_auth_path" {
+  count = local.create_azure_automation_runbook ? 1 : 0
+
+  name                    = "VAULT_AUTH_PATH"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal[0].name
+  value                   = var.azure_automation_vault_auth_path
+}
+
+resource "azurerm_automation_variable_string" "vault_auth_role" {
+  count = local.create_azure_automation_runbook ? 1 : 0
+
+  name                    = "VAULT_AUTH_ROLE"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal[0].name
+  value                   = var.azure_automation_vault_auth_role
+}
+
+resource "azurerm_automation_variable_string" "vault_jwt_audience" {
+  count = local.create_azure_automation_runbook ? 1 : 0
+
+  name                    = "VAULT_JWT_AUDIENCE"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal[0].name
+  value                   = var.azure_automation_vault_jwt_audience
+}
+
+resource "azurerm_automation_variable_string" "vault_namespace" {
+  count = local.create_azure_automation_runbook ? 1 : 0
+
+  name                    = "VAULT_NAMESPACE"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal[0].name
+  value                   = var.vault_namespace
+}
+
+resource "azurerm_automation_variable_string" "vault_pki_path" {
+  count = local.create_azure_automation_runbook ? 1 : 0
+
+  name                    = "VAULT_PKI_PATH"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal[0].name
+  value                   = var.vault_pki_path
+}
+
+resource "azurerm_automation_variable_string" "vault_pki_role" {
+  count = local.create_azure_automation_runbook ? 1 : 0
+
+  name                    = "VAULT_PKI_ROLE"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal[0].name
+  value                   = var.vault_pki_role
+}
+
+resource "azurerm_automation_variable_string" "vault_token" {
+  count = local.create_azure_automation_runbook ? 1 : 0
+
+  name                    = "VAULT_TOKEN"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal[0].name
+  value                   = var.azure_automation_vault_token
+  encrypted               = true
+}
+
+resource "azurerm_automation_schedule" "certificate_renewal" {
+  count = local.create_azure_automation_runbook ? 1 : 0
+
+  name                    = var.azure_automation_schedule_name
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal[0].name
+  frequency               = "Hour"
+  interval                = var.azure_automation_schedule_interval_hours
+  timezone                = var.azure_automation_schedule_timezone
+  start_time              = timeadd(timestamp(), "5m")
+  description             = "Hourly certificate renewal runbook schedule"
+}
+
+resource "azurerm_automation_job_schedule" "certificate_renewal" {
+  count = local.create_azure_automation_runbook ? 1 : 0
+
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal[0].name
+  schedule_name           = azurerm_automation_schedule.certificate_renewal[0].name
+  runbook_name            = azurerm_automation_runbook.certificate_renewal[0].name
+
+  depends_on = [azurerm_key_vault_access_policy.automation_identity]
+}
+
+resource "vault_policy" "workload_pki_issue" {
+  count = local.create_vault_jwt_auth ? 1 : 0
+
+  name = "${local.name_prefix}-workload-pki-issue"
 
   policy = <<EOT
 path "${var.vault_pki_path}/issue/${var.vault_pki_role}" {
@@ -161,8 +344,8 @@ path "${var.vault_pki_path}/issue/${var.vault_pki_role}" {
 EOT
 }
 
-resource "vault_jwt_auth_backend" "azure_devops" {
-  count = local.create_azure_devops_jwt_auth ? 1 : 0
+resource "vault_jwt_auth_backend" "workload" {
+  count = local.create_vault_jwt_auth ? 1 : 0
 
   description        = var.azure_devops_jwt_backend_description
   path               = var.azure_devops_jwt_backend_path
@@ -171,18 +354,33 @@ resource "vault_jwt_auth_backend" "azure_devops" {
   bound_issuer       = var.azure_devops_jwt_bound_issuer
 }
 
-resource "vault_jwt_auth_backend_role" "azure_devops" {
-  count = local.create_azure_devops_jwt_auth ? 1 : 0
+resource "vault_jwt_auth_backend_role" "workload" {
+  count = local.create_vault_jwt_auth ? 1 : 0
 
-  backend         = vault_jwt_auth_backend.azure_devops[0].path
+  backend         = vault_jwt_auth_backend.workload[0].path
   role_name       = var.azure_devops_jwt_role_name
   role_type       = "jwt"
   user_claim      = var.azure_devops_jwt_user_claim
   bound_audiences = var.azure_devops_jwt_bound_audiences
   bound_claims    = var.azure_devops_jwt_bound_claims
-  token_policies  = [vault_policy.azure_devops_pki_issue[0].name]
+  token_policies  = [vault_policy.workload_pki_issue[0].name]
   token_ttl       = var.azure_devops_jwt_token_ttl
   token_max_ttl   = var.azure_devops_jwt_token_max_ttl
+}
+
+moved {
+  from = vault_policy.azure_devops_pki_issue
+  to   = vault_policy.workload_pki_issue
+}
+
+moved {
+  from = vault_jwt_auth_backend.azure_devops
+  to   = vault_jwt_auth_backend.workload
+}
+
+moved {
+  from = vault_jwt_auth_backend_role.azure_devops
+  to   = vault_jwt_auth_backend_role.workload
 }
 
 resource "random_password" "bootstrap_pfx_password" {

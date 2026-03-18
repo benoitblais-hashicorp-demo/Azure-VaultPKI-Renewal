@@ -12,6 +12,7 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
+  AZURE_SERVICE_CONNECTION: ""
   pythonVersion: "3.12"
   VAULT_ADDR: "https://replace-with-your-vault-address"
   VAULT_NAMESPACE: ""

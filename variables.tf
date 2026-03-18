@@ -271,6 +271,124 @@ variable "app_gateway_subnet_prefix" {
   }
 }
 
+variable "azure_automation_account_name" {
+  type        = string
+  description = "(Optional) Azure Automation Account name used for runbook-based certificate renewal."
+  default     = "aa-vault-pki-renewal"
+
+  validation {
+    condition     = can(regex("^[A-Za-z][A-Za-z0-9-]{4,49}$", var.azure_automation_account_name))
+    error_message = "`azure_automation_account_name` must be 5-50 characters, start with a letter, and contain only letters, numbers, and hyphens."
+  }
+}
+
+variable "azure_automation_runbook_log_verbose" {
+  type        = bool
+  description = "(Optional) When true, enables verbose logging on the Azure Automation runbook."
+  default     = true
+}
+
+variable "azure_automation_runbook_name" {
+  type        = string
+  description = "(Optional) Azure Automation runbook name used for certificate renewal."
+  default     = "renew-certificate"
+
+  validation {
+    condition     = trimspace(var.azure_automation_runbook_name) != ""
+    error_message = "`azure_automation_runbook_name` must not be empty."
+  }
+}
+
+variable "azure_automation_schedule_interval_hours" {
+  type        = number
+  description = "(Optional) Hour interval for Azure Automation schedule recurrence."
+  default     = 1
+
+  validation {
+    condition     = var.azure_automation_schedule_interval_hours >= 1 && var.azure_automation_schedule_interval_hours <= 24
+    error_message = "`azure_automation_schedule_interval_hours` must be between 1 and 24."
+  }
+}
+
+variable "azure_automation_schedule_name" {
+  type        = string
+  description = "(Optional) Azure Automation schedule name used for runbook recurrence."
+  default     = "hourly-certificate-renewal"
+
+  validation {
+    condition     = trimspace(var.azure_automation_schedule_name) != ""
+    error_message = "`azure_automation_schedule_name` must not be empty."
+  }
+}
+
+variable "azure_automation_schedule_timezone" {
+  type        = string
+  description = "(Optional) Azure Automation schedule timezone."
+  default     = "UTC"
+
+  validation {
+    condition     = trimspace(var.azure_automation_schedule_timezone) != ""
+    error_message = "`azure_automation_schedule_timezone` must not be empty."
+  }
+}
+
+variable "azure_automation_vault_auth_path" {
+  type        = string
+  description = "(Optional) Vault auth path used by the Azure Automation runbook when VAULT_TOKEN is not supplied."
+  default     = ""
+
+  validation {
+    condition     = !var.enable_azure_automation_runbook || trimspace(var.azure_automation_vault_token) != "" || trimspace(var.azure_automation_vault_auth_path) != ""
+    error_message = "`azure_automation_vault_auth_path` must be set when `enable_azure_automation_runbook` is true and `azure_automation_vault_token` is empty."
+  }
+}
+
+variable "azure_automation_vault_auth_role" {
+  type        = string
+  description = "(Optional) Vault auth role used by the Azure Automation runbook when VAULT_TOKEN is not supplied."
+  default     = ""
+
+  validation {
+    condition     = !var.enable_azure_automation_runbook || trimspace(var.azure_automation_vault_token) != "" || trimspace(var.azure_automation_vault_auth_role) != ""
+    error_message = "`azure_automation_vault_auth_role` must be set when `enable_azure_automation_runbook` is true and `azure_automation_vault_token` is empty."
+  }
+}
+
+variable "azure_automation_vault_jwt_audience" {
+  type        = string
+  description = "(Optional) Audience/resource used to request a managed-identity JWT for Vault login when VAULT_TOKEN and VAULT_JWT are not supplied."
+  default     = ""
+
+  validation {
+    condition     = !var.enable_azure_automation_runbook || trimspace(var.azure_automation_vault_token) != "" || trimspace(var.azure_automation_vault_jwt_audience) != ""
+    error_message = "`azure_automation_vault_jwt_audience` must be set when `enable_azure_automation_runbook` is true and `azure_automation_vault_token` is empty."
+  }
+}
+
+variable "azure_automation_vault_token" {
+  type        = string
+  description = "(Optional) Static Vault token used by Azure Automation runbook. Prefer short-lived tokens and rotate regularly."
+  default     = ""
+  sensitive   = true
+}
+
+variable "enable_azure_automation_runbook" {
+  type        = bool
+  description = "(Optional) When true, creates Azure Automation resources to run certificate renewal on an hourly schedule."
+  default     = false
+}
+
+variable "azure_devops_azure_service_connection_name" {
+  type        = string
+  description = "(Optional) Azure Resource Manager service connection name used by AzureCLI@2 in the generated pipeline. Must be set when Azure DevOps pipeline creation is enabled."
+  default     = ""
+
+  validation {
+    condition     = trimspace(var.azure_devops_project_name) == "" || trimspace(var.azure_devops_azure_service_connection_name) != ""
+    error_message = "`azure_devops_azure_service_connection_name` must be set when `azure_devops_project_name` is set."
+  }
+}
+
 variable "azure_devops_jwt_backend_description" {
   type        = string
   description = "(Optional) Description for the Azure DevOps JWT/OIDC auth backend in Vault."

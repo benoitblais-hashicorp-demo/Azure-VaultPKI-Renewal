@@ -8,6 +8,16 @@ variable "subscription_id" {
   }
 }
 
+variable "vault_addr" {
+  type        = string
+  description = "(Required) Vault address injected into the generated Azure DevOps pipeline file."
+
+  validation {
+    condition     = can(regex("^https?://", var.vault_addr))
+    error_message = "`vault_addr` must start with http:// or https://."
+  }
+}
+
 variable "app_gateway_subnet_prefix" {
   type        = string
   description = "(Optional) CIDR prefix used by the dedicated Application Gateway subnet."
@@ -213,32 +223,21 @@ variable "resource_group_name" {
   }
 }
 
-variable "tags" {
-  type        = map(string)
-  description = "(Optional) Tags applied to Azure resources."
-  default     = {}
-}
-
-variable "vault_addr" {
-  type        = string
-  description = "(Required) Vault address used for initial certificate issuance."
-  default     = ""
-
-  validation {
-    condition     = var.vault_addr == "" || can(regex("^https?://", var.vault_addr))
-    error_message = "`vault_addr` must be empty or start with http:// or https://."
-  }
-}
-
 variable "vault_namespace" {
   type        = string
-  description = "(Optional) Vault namespace used for initial certificate issuance."
+  description = "(Optional) Vault namespace injected into the generated Azure DevOps pipeline file."
   default     = ""
 
   validation {
     condition     = var.vault_namespace == "" || (trimspace(var.vault_namespace) == var.vault_namespace && !can(regex("\\s", var.vault_namespace)))
     error_message = "`vault_namespace` must not include whitespace characters."
   }
+}
+
+variable "tags" {
+  type        = map(string)
+  description = "(Optional) Tags applied to Azure resources."
+  default     = {}
 }
 
 variable "vault_pki_path" {
@@ -261,13 +260,6 @@ variable "vault_pki_role" {
     condition     = trimspace(var.vault_pki_role) != ""
     error_message = "`vault_pki_role` cannot be empty."
   }
-}
-
-variable "vault_token" {
-  type        = string
-  description = "(Optional) Vault token used for initial certificate issuance. Leave empty to use JWT/OIDC auth."
-  sensitive   = true
-  default     = ""
 }
 
 variable "vnet_address_space" {

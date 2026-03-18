@@ -4,6 +4,14 @@ locals {
   name_prefix                   = lower(replace(var.name_prefix, "_", "-"))
 }
 
+resource "local_file" "azure_pipelines_yaml" {
+  filename = "${path.module}/azure-pipelines.yml"
+  content = templatefile("${path.module}/templates/azure-pipelines.yml.tftpl", {
+    vault_addr      = var.vault_addr
+    vault_namespace = var.vault_namespace
+  })
+}
+
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_resource_group" "this" {

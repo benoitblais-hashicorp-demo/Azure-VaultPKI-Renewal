@@ -13,8 +13,8 @@ pool:
 
 variables:
   pythonVersion: "3.12"
-  VAULT_ADDR: "https://replace-with-your-vault-address"
-  VAULT_NAMESPACE: ""
+  VAULT_ADDR: "${vault_addr}"
+  VAULT_NAMESPACE: "${vault_namespace}"
 
 stages:
   - stage: renew_certificate

@@ -99,6 +99,8 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.64.0)
 
+- <a name="requirement_local"></a> [local](#requirement\_local) (~> 2.5)
+
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.7)
 
 - <a name="requirement_vault"></a> [vault](#requirement\_vault) (~> 5.8.0)
@@ -114,6 +116,12 @@ The following input variables are required:
 ### <a name="input_subscription_id"></a> [subscription\_id](#input\_subscription\_id)
 
 Description: (Required) Azure subscription ID used by the AzureRM provider.
+
+Type: `string`
+
+### <a name="input_vault_addr"></a> [vault\_addr](#input\_vault\_addr)
+
+Description: (Required) Vault address injected into the generated Azure DevOps pipeline file.
 
 Type: `string`
 
@@ -295,17 +303,9 @@ Type: `map(string)`
 
 Default: `{}`
 
-### <a name="input_vault_addr"></a> [vault\_addr](#input\_vault\_addr)
-
-Description: (Required) Vault address used for initial certificate issuance.
-
-Type: `string`
-
-Default: `""`
-
 ### <a name="input_vault_namespace"></a> [vault\_namespace](#input\_vault\_namespace)
 
-Description: (Optional) Vault namespace used for initial certificate issuance.
+Description: (Optional) Vault namespace injected into the generated Azure DevOps pipeline file.
 
 Type: `string`
 
@@ -326,14 +326,6 @@ Description: (Optional) Vault PKI role used for certificate issuance.
 Type: `string`
 
 Default: `"gw-cert-issuer"`
-
-### <a name="input_vault_token"></a> [vault\_token](#input\_vault\_token)
-
-Description: (Optional) Vault token used for initial certificate issuance. Leave empty to use JWT/OIDC auth.
-
-Type: `string`
-
-Default: `""`
 
 ### <a name="input_vnet_address_space"></a> [vnet\_address\_space](#input\_vnet\_address\_space)
 
@@ -363,6 +355,7 @@ The following resources are used by this module:
 - [azurerm_subnet.app_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_user_assigned_identity.app_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
 - [azurerm_virtual_network.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
+- [local_file.azure_pipelines_yaml](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) (resource)
 - [random_password.bootstrap_pfx_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) (resource)
 - [vault_jwt_auth_backend.azure_devops](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/jwt_auth_backend) (resource)
 - [vault_jwt_auth_backend_role.azure_devops](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/jwt_auth_backend_role) (resource)

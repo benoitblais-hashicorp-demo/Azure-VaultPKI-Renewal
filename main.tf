@@ -4,7 +4,7 @@ locals {
     vault_pki_secret_backend_cert.bootstrap.certificate,
     vault_pki_secret_backend_cert.bootstrap.private_key
   ]))
-  store_bootstrap_pfx_password  = var.bootstrap_pfx_password_store_in_vault && trimspace(var.bootstrap_pfx_password_kv_mount) != "" && trimspace(var.bootstrap_pfx_password_kv_path) != ""
+  store_bootstrap_pfx_password = var.bootstrap_pfx_password_store_in_vault && trimspace(var.bootstrap_pfx_password_kv_mount) != "" && trimspace(var.bootstrap_pfx_password_kv_path) != ""
   create_azure_devops_jwt_auth = var.enable_azure_devops_jwt_auth && var.vault_pki_path != "" && var.vault_pki_role != ""
   name_prefix                  = lower(replace(var.name_prefix, "_", "-"))
 }

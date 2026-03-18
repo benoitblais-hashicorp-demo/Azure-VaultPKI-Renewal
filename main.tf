@@ -1,16 +1,16 @@
 locals {
   bootstrap_key_vault_secret_id = "https://${azurerm_key_vault.this.name}.vault.azure.net/secrets/${var.key_vault_certificate_name}"
-  bootstrap_pem_bundle          = join("\n", compact(concat([
+  bootstrap_pem_bundle = join("\n", compact(concat([
     vault_pki_secret_backend_cert.bootstrap.certificate
-  ], try(
+    ], try(
     tolist(vault_pki_secret_backend_cert.bootstrap.ca_chain),
     [vault_pki_secret_backend_cert.bootstrap.ca_chain],
     []
-  ), [
+    ), [
     vault_pki_secret_backend_cert.bootstrap.private_key
   ])))
-  create_azure_devops_jwt_auth  = var.enable_azure_devops_jwt_auth && var.vault_pki_path != "" && var.vault_pki_role != ""
-  name_prefix                   = lower(replace(var.name_prefix, "_", "-"))
+  create_azure_devops_jwt_auth = var.enable_azure_devops_jwt_auth && var.vault_pki_path != "" && var.vault_pki_role != ""
+  name_prefix                  = lower(replace(var.name_prefix, "_", "-"))
 }
 
 resource "local_file" "azure_pipelines_yaml" {
@@ -171,11 +171,11 @@ resource "vault_pki_secret_backend_role" "bootstrap" {
 }
 
 resource "vault_pki_secret_backend_cert" "bootstrap" {
-  backend     = var.vault_pki_path
-  name        = var.vault_pki_role
-  common_name = var.initial_certificate_common_name
-  ttl         = var.initial_certificate_ttl
-  format      = "pem"
+  backend            = var.vault_pki_path
+  name               = var.vault_pki_role
+  common_name        = var.initial_certificate_common_name
+  ttl                = var.initial_certificate_ttl
+  format             = "pem"
   private_key_format = "pkcs8"
 
   lifecycle {

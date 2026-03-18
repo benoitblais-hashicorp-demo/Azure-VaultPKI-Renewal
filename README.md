@@ -97,6 +97,8 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.6.0)
 
+- <a name="requirement_azuredevops"></a> [azuredevops](#requirement\_azuredevops) (~> 1.14.0)
+
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.64.0)
 
 - <a name="requirement_local"></a> [local](#requirement\_local) (~> 2.5)
@@ -405,6 +407,78 @@ Type: `string`
 
 Default: `"sub"`
 
+### <a name="input_azure_devops_pipeline_branch_name"></a> [azure\_devops\_pipeline\_branch\_name](#input\_azure\_devops\_pipeline\_branch\_name)
+
+Description: (Optional) Branch used by the Azure DevOps pipeline definition. Leave empty to use the repository default branch for Azure Repos Git or `main` for GitHub.
+
+Type: `string`
+
+Default: `""`
+
+### <a name="input_azure_devops_pipeline_folder"></a> [azure\_devops\_pipeline\_folder](#input\_azure\_devops\_pipeline\_folder)
+
+Description: (Optional) Azure DevOps pipeline folder path. Use `\` for the root folder.
+
+Type: `string`
+
+Default: `"\\"`
+
+### <a name="input_azure_devops_pipeline_name"></a> [azure\_devops\_pipeline\_name](#input\_azure\_devops\_pipeline\_name)
+
+Description: (Optional) Name of the Azure DevOps pipeline created by Terraform.
+
+Type: `string`
+
+Default: `"vault-pki-renewal"`
+
+### <a name="input_azure_devops_pipeline_yaml_path"></a> [azure\_devops\_pipeline\_yaml\_path](#input\_azure\_devops\_pipeline\_yaml\_path)
+
+Description: (Optional) Path to the Azure Pipelines YAML file in the source repository.
+
+Type: `string`
+
+Default: `"azure-pipelines.yml"`
+
+### <a name="input_azure_devops_project_name"></a> [azure\_devops\_project\_name](#input\_azure\_devops\_project\_name)
+
+Description: (Optional) Azure DevOps project name where the pipeline will be created. Leave empty to skip Azure DevOps pipeline creation.
+
+Type: `string`
+
+Default: `""`
+
+### <a name="input_azure_devops_repository_id"></a> [azure\_devops\_repository\_id](#input\_azure\_devops\_repository\_id)
+
+Description: (Optional) Repository identifier used by Azure DevOps pipeline creation for external repositories. For GitHub, use `<owner>/<repo>`. Leave empty when `azure_devops_repository_type` is `TfsGit`.
+
+Type: `string`
+
+Default: `""`
+
+### <a name="input_azure_devops_repository_name"></a> [azure\_devops\_repository\_name](#input\_azure\_devops\_repository\_name)
+
+Description: (Optional) Azure Repos Git repository name used when `azure_devops_repository_type` is `TfsGit`.
+
+Type: `string`
+
+Default: `""`
+
+### <a name="input_azure_devops_repository_service_connection_id"></a> [azure\_devops\_repository\_service\_connection\_id](#input\_azure\_devops\_repository\_service\_connection\_id)
+
+Description: (Optional) Azure DevOps service connection ID for external repositories such as GitHub. Leave empty for `TfsGit`.
+
+Type: `string`
+
+Default: `""`
+
+### <a name="input_azure_devops_repository_type"></a> [azure\_devops\_repository\_type](#input\_azure\_devops\_repository\_type)
+
+Description: (Optional) Repository type used by the Azure DevOps pipeline definition. Supported values are `GitHub`, `GitHubEnterprise`, and `TfsGit`.
+
+Type: `string`
+
+Default: `"GitHub"`
+
 ### <a name="input_bootstrap_pfx_password_create_kv_mount"></a> [bootstrap\_pfx\_password\_create\_kv\_mount](#input\_bootstrap\_pfx\_password\_create\_kv\_mount)
 
 Description: (Optional) When true, Terraform creates the KVv2 mount for bootstrap PFX password storage; set false when the mount already exists or mount management is not permitted.
@@ -431,11 +505,11 @@ Default: `"azure-vaultpki-renewal/bootstrap"`
 
 ### <a name="input_bootstrap_pfx_password_store_in_vault"></a> [bootstrap\_pfx\_password\_store\_in\_vault](#input\_bootstrap\_pfx\_password\_store\_in\_vault)
 
-Description: (Optional) When true, Terraform writes the generated bootstrap PFX password into Vault KVv2; set false when write permissions are not granted or secret storage is managed outside this module.
+Description: (Optional) When true, Terraform writes the generated bootstrap PFX password into Vault KVv2. Defaults to false so least-privilege Vault configurations do not require KV write access unless explicitly enabled.
 
 Type: `bool`
 
-Default: `true`
+Default: `false`
 
 ### <a name="input_enable_azure_devops_jwt_auth"></a> [enable\_azure\_devops\_jwt\_auth](#input\_enable\_azure\_devops\_jwt\_auth)
 
@@ -543,6 +617,7 @@ Default:
 
 The following resources are used by this module:
 
+- [azuredevops_build_definition.certificate_renewal](https://registry.terraform.io/providers/microsoft/azuredevops/latest/docs/resources/build_definition) (resource)
 - [azurerm_application_gateway.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/application_gateway) (resource)
 - [azurerm_key_vault.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault) (resource)
 - [azurerm_key_vault_access_policy.app_gateway_identity](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_access_policy) (resource)
@@ -562,6 +637,8 @@ The following resources are used by this module:
 - [vault_pki_secret_backend_cert.bootstrap](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/pki_secret_backend_cert) (resource)
 - [vault_pki_secret_backend_role.bootstrap](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/pki_secret_backend_role) (resource)
 - [vault_policy.azure_devops_pki_issue](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/policy) (resource)
+- [azuredevops_git_repository.pipeline_repository](https://registry.terraform.io/providers/microsoft/azuredevops/latest/docs/data-sources/git_repository) (data source)
+- [azuredevops_project.pipeline_project](https://registry.terraform.io/providers/microsoft/azuredevops/latest/docs/data-sources/project) (data source)
 - [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 
 ## Outputs
@@ -575,6 +652,14 @@ Description: Application Gateway name receiving TLS certificate updates from Key
 ### <a name="output_application_gateway_public_ip"></a> [application\_gateway\_public\_ip](#output\_application\_gateway\_public\_ip)
 
 Description: Public IP address of the Application Gateway
+
+### <a name="output_azure_devops_pipeline_id"></a> [azure\_devops\_pipeline\_id](#output\_azure\_devops\_pipeline\_id)
+
+Description: Azure DevOps build definition ID for the certificate renewal pipeline. Null when pipeline creation is not configured.
+
+### <a name="output_azure_devops_pipeline_name"></a> [azure\_devops\_pipeline\_name](#output\_azure\_devops\_pipeline\_name)
+
+Description: Azure DevOps pipeline name for the certificate renewal pipeline. Null when pipeline creation is not configured.
 
 ### <a name="output_key_vault_certificate_name"></a> [key\_vault\_certificate\_name](#output\_key\_vault\_certificate\_name)
 

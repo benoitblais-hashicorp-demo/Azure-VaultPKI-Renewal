@@ -11,11 +11,11 @@ locals {
   azure_devops_pipeline_branch_name = trimspace(var.azure_devops_pipeline_branch_name) != "" ? var.azure_devops_pipeline_branch_name : (
     var.azure_devops_repository_type == "TfsGit" ? try(data.azuredevops_git_repository.pipeline_repository[0].default_branch, "refs/heads/main") : "main"
   )
-  azure_devops_pipeline_repo_id = var.azure_devops_repository_type == "TfsGit" ? try(data.azuredevops_git_repository.pipeline_repository[0].id, "") : var.azure_devops_repository_id
+  azure_devops_pipeline_repo_id               = var.azure_devops_repository_type == "TfsGit" ? try(data.azuredevops_git_repository.pipeline_repository[0].id, "") : var.azure_devops_repository_id
   azure_devops_pipeline_service_connection_id = contains(["GitHub", "GitHubEnterprise"], var.azure_devops_repository_type) ? var.azure_devops_repository_service_connection_id : null
-  store_bootstrap_pfx_password  = var.bootstrap_pfx_password_store_in_vault && trimspace(var.bootstrap_pfx_password_kv_mount) != "" && trimspace(var.bootstrap_pfx_password_kv_path) != ""
-  create_azure_devops_jwt_auth = var.enable_azure_devops_jwt_auth && var.vault_pki_path != "" && var.vault_pki_role != ""
-  name_prefix                  = lower(replace(var.name_prefix, "_", "-"))
+  store_bootstrap_pfx_password                = var.bootstrap_pfx_password_store_in_vault && trimspace(var.bootstrap_pfx_password_kv_mount) != "" && trimspace(var.bootstrap_pfx_password_kv_path) != ""
+  create_azure_devops_jwt_auth                = var.enable_azure_devops_jwt_auth && var.vault_pki_path != "" && var.vault_pki_role != ""
+  name_prefix                                 = lower(replace(var.name_prefix, "_", "-"))
 }
 
 resource "local_file" "azure_pipelines_yaml" {

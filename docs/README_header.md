@@ -87,27 +87,3 @@ This demo uses a scheduled pipeline model where Azure DevOps runs every hour, is
 ### Run the Demo Immediately (No 1-Hour Wait)
 
 You can run the Azure DevOps pipeline manually from the Azure DevOps UI to force immediate certificate renewal.
-
-## Azure Key Vault VM Extension Relevance
-
-This is relevant only when your workload terminates TLS directly on VMs that use the Key Vault VM extension to pull certificates.
-
-- If your TLS endpoint is Application Gateway, the VM extension is not part of the datapath and is not required for this demo.
-- If you also have VM-based workloads, this same renewal pattern still helps because importing a renewed certificate to Key Vault enables the VM extension to fetch updated certificate versions.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

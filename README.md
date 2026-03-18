@@ -429,6 +429,14 @@ Type: `string`
 
 Default: `"azure-vaultpki-renewal/bootstrap"`
 
+### <a name="input_bootstrap_pfx_password_store_in_vault"></a> [bootstrap\_pfx\_password\_store\_in\_vault](#input\_bootstrap\_pfx\_password\_store\_in\_vault)
+
+Description: (Optional) When true, Terraform writes the generated bootstrap PFX password into Vault KVv2; set false when write permissions are not granted or secret storage is managed outside this module.
+
+Type: `bool`
+
+Default: `true`
+
 ### <a name="input_enable_azure_devops_jwt_auth"></a> [enable\_azure\_devops\_jwt\_auth](#input\_enable\_azure\_devops\_jwt\_auth)
 
 Description: (Optional) When true, creates the Vault JWT role and policy for Azure DevOps pipeline authentication.

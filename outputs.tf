@@ -40,5 +40,5 @@ output "vault_bootstrap_pfx_password_kv_mount" {
 
 output "vault_bootstrap_pfx_password_secret_path" {
   description = "Vault KVv2 secret path storing generated bootstrap PFX password"
-  value       = vault_kv_secret_v2.bootstrap_pfx_password.path
+  value       = try(vault_kv_secret_v2.bootstrap_pfx_password[0].path, null)
 }

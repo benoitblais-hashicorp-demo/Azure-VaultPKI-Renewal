@@ -18,16 +18,6 @@ output "azure_automation_runbook_name" {
   value       = try(azurerm_automation_runbook.certificate_renewal[0].name, null)
 }
 
-output "azure_devops_pipeline_id" {
-  description = "Azure DevOps build definition ID for the certificate renewal pipeline. Null when pipeline creation is not configured."
-  value       = try(azuredevops_build_definition.certificate_renewal[0].id, null)
-}
-
-output "azure_devops_pipeline_name" {
-  description = "Azure DevOps pipeline name for the certificate renewal pipeline. Null when pipeline creation is not configured."
-  value       = try(azuredevops_build_definition.certificate_renewal[0].name, null)
-}
-
 output "key_vault_certificate_name" {
   description = "Certificate name in Azure Key Vault updated by the renewal automation"
   value       = var.key_vault_certificate_name
@@ -43,13 +33,13 @@ output "resource_group_name" {
   value       = azurerm_resource_group.this.name
 }
 
-output "vault_azure_devops_jwt_backend_path" {
-  description = "Vault JWT/OIDC auth backend path for Azure DevOps pipeline logins"
-  value       = var.azure_devops_jwt_backend_path
+output "vault_jwt_backend_path" {
+  description = "Vault JWT/OIDC auth backend path for workload logins"
+  value       = var.vault_jwt_backend_path
 }
 
-output "vault_azure_devops_jwt_role_name" {
-  description = "Vault JWT role name for Azure DevOps pipeline logins. Null when disabled."
+output "vault_jwt_role_name" {
+  description = "Vault JWT role name for workload logins. Null when disabled."
   value       = try(vault_jwt_auth_backend_role.workload[0].role_name, null)
 }
 

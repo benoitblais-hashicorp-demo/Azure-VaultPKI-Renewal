@@ -4,59 +4,13 @@ locals {
     vault_pki_secret_backend_cert.bootstrap.certificate,
     vault_pki_secret_backend_cert.bootstrap.private_key
   ]))
-  create_azure_devops_pipeline = trimspace(var.azure_devops_project_name) != "" && (
-    (var.azure_devops_repository_type == "TfsGit" && trimspace(var.azure_devops_repository_name) != "") ||
-    (var.azure_devops_repository_type != "TfsGit" && trimspace(var.azure_devops_repository_id) != "")
-  ) && trimspace(var.azure_devops_azure_service_connection_name) != ""
-  azure_devops_pipeline_branch_name = trimspace(var.azure_devops_pipeline_branch_name) != "" ? var.azure_devops_pipeline_branch_name : (
-    var.azure_devops_repository_type == "TfsGit" ? try(data.azuredevops_git_repository.pipeline_repository[0].default_branch, "refs/heads/main") : "main"
-  )
-  azure_devops_pipeline_repo_id               = var.azure_devops_repository_type == "TfsGit" ? try(data.azuredevops_git_repository.pipeline_repository[0].id, "") : var.azure_devops_repository_id
-  azure_devops_pipeline_service_connection_id = contains(["GitHub", "GitHubEnterprise"], var.azure_devops_repository_type) ? var.azure_devops_repository_service_connection_id : null
   create_azure_automation_runbook             = var.enable_azure_automation_runbook
   store_bootstrap_pfx_password                = var.bootstrap_pfx_password_store_in_vault && trimspace(var.bootstrap_pfx_password_kv_mount) != "" && trimspace(var.bootstrap_pfx_password_kv_path) != ""
-  create_vault_jwt_auth                       = var.enable_azure_devops_jwt_auth && var.vault_pki_path != "" && var.vault_pki_role != ""
+  create_vault_jwt_auth                       = var.enable_vault_jwt_auth && var.vault_pki_path != "" && var.vault_pki_role != ""
   name_prefix                                 = lower(replace(var.name_prefix, "_", "-"))
 }
 
 data "azurerm_client_config" "current" {}
-
-data "azuredevops_project" "pipeline_project" {
-  count = local.create_azure_devops_pipeline ? 1 : 0
-
-  name = var.azure_devops_project_name
-}
-
-data "azuredevops_git_repository" "pipeline_repository" {
-  count = local.create_azure_devops_pipeline && var.azure_devops_repository_type == "TfsGit" ? 1 : 0
-
-  project_id = data.azuredevops_project.pipeline_project[0].id
-  name       = var.azure_devops_repository_name
-}
-
-resource "azuredevops_build_definition" "certificate_renewal" {
-  count = local.create_azure_devops_pipeline ? 1 : 0
-
-  project_id = data.azuredevops_project.pipeline_project[0].id
-  name       = var.azure_devops_pipeline_name
-  path       = var.azure_devops_pipeline_folder
-
-  ci_trigger {
-    use_yaml = true
-  }
-
-  repository {
-    repo_type             = var.azure_devops_repository_type
-    repo_id               = local.azure_devops_pipeline_repo_id
-    branch_name           = local.azure_devops_pipeline_branch_name
-    yml_path              = var.azure_devops_pipeline_yaml_path
-    service_connection_id = local.azure_devops_pipeline_service_connection_id
-  }
-
-  features {
-    skip_first_run = true
-  }
-}
 
 resource "azurerm_resource_group" "this" {
   name     = var.resource_group_name
@@ -335,7 +289,7 @@ resource "azurerm_automation_job_schedule" "certificate_renewal" {
 resource "vault_policy" "workload_pki_issue" {
   count = local.create_vault_jwt_auth ? 1 : 0
 
-  name = "${local.name_prefix}-azure-devops-pki-issue"
+  name = "${local.name_prefix}-workload-pki-issue"
 
   policy = <<EOT
 path "${var.vault_pki_path}/issue/${var.vault_pki_role}" {
@@ -347,48 +301,25 @@ EOT
 resource "vault_jwt_auth_backend" "workload" {
   count = local.create_vault_jwt_auth ? 1 : 0
 
-  description        = var.azure_devops_jwt_backend_description
-  path               = var.azure_devops_jwt_backend_path
+  description        = var.vault_jwt_backend_description
+  path               = var.vault_jwt_backend_path
   type               = "jwt"
-  oidc_discovery_url = var.azure_devops_jwt_discovery_url
-  bound_issuer       = var.azure_devops_jwt_bound_issuer
+  oidc_discovery_url = var.vault_jwt_discovery_url
+  bound_issuer       = var.vault_jwt_bound_issuer
 }
 
 resource "vault_jwt_auth_backend_role" "workload" {
   count = local.create_vault_jwt_auth ? 1 : 0
 
   backend         = vault_jwt_auth_backend.workload[0].path
-  role_name       = var.azure_devops_jwt_role_name
+  role_name       = var.vault_jwt_role_name
   role_type       = "jwt"
-  user_claim      = var.azure_devops_jwt_user_claim
-  bound_audiences = var.azure_devops_jwt_bound_audiences
-  bound_claims    = var.azure_devops_jwt_bound_claims
+  user_claim      = var.vault_jwt_user_claim
+  bound_audiences = var.vault_jwt_bound_audiences
+  bound_claims    = var.vault_jwt_bound_claims
   token_policies  = [vault_policy.workload_pki_issue[0].name]
-  token_ttl       = var.azure_devops_jwt_token_ttl
-  token_max_ttl   = var.azure_devops_jwt_token_max_ttl
-}
-
-moved {
-  from = vault_policy.azure_devops_pki_issue
-  to   = vault_policy.workload_pki_issue
-}
-
-moved {
-  from = vault_jwt_auth_backend.azure_devops
-  to   = vault_jwt_auth_backend.workload
-}
-
-moved {
-  from = vault_jwt_auth_backend_role.azure_devops
-  to   = vault_jwt_auth_backend_role.workload
-}
-
-removed {
-  from = local_file.azure_pipelines_yaml
-
-  lifecycle {
-    destroy = false
-  }
+  token_ttl       = var.vault_jwt_token_ttl
+  token_max_ttl   = var.vault_jwt_token_max_ttl
 }
 
 resource "random_password" "bootstrap_pfx_password" {

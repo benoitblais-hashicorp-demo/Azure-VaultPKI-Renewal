@@ -18,6 +18,248 @@ variable "vault_addr" {
   }
 }
 
+variable "app_gateway_autoscale_max_capacity" {
+  type        = number
+  description = "(Optional) Maximum autoscale capacity for Application Gateway."
+  default     = 2
+
+  validation {
+    condition     = var.app_gateway_autoscale_max_capacity >= 1
+    error_message = "`app_gateway_autoscale_max_capacity` must be greater than or equal to 1."
+  }
+}
+
+variable "app_gateway_autoscale_min_capacity" {
+  type        = number
+  description = "(Optional) Minimum autoscale capacity for Application Gateway."
+  default     = 1
+
+  validation {
+    condition     = var.app_gateway_autoscale_min_capacity >= 0
+    error_message = "`app_gateway_autoscale_min_capacity` must be greater than or equal to 0."
+  }
+}
+
+variable "app_gateway_backend_address_pool_fqdns" {
+  type        = list(string)
+  description = "(Optional) Backend pool FQDNs for Application Gateway."
+  default     = ["example.com"]
+
+  validation {
+    condition     = length(var.app_gateway_backend_address_pool_fqdns) > 0 && alltrue([for fqdn in var.app_gateway_backend_address_pool_fqdns : trimspace(fqdn) != ""])
+    error_message = "`app_gateway_backend_address_pool_fqdns` must contain at least one non-empty FQDN."
+  }
+}
+
+variable "app_gateway_backend_address_pool_name" {
+  type        = string
+  description = "(Optional) Backend address pool name in Application Gateway."
+  default     = "demo-backend-pool"
+
+  validation {
+    condition     = trimspace(var.app_gateway_backend_address_pool_name) != ""
+    error_message = "`app_gateway_backend_address_pool_name` cannot be empty."
+  }
+}
+
+variable "app_gateway_backend_http_settings_cookie_based_affinity" {
+  type        = string
+  description = "(Optional) Cookie-based affinity mode for backend HTTP settings."
+  default     = "Disabled"
+
+  validation {
+    condition     = contains(["Enabled", "Disabled"], var.app_gateway_backend_http_settings_cookie_based_affinity)
+    error_message = "`app_gateway_backend_http_settings_cookie_based_affinity` must be `Enabled` or `Disabled`."
+  }
+}
+
+variable "app_gateway_backend_http_settings_name" {
+  type        = string
+  description = "(Optional) Backend HTTP settings name in Application Gateway."
+  default     = "demo-backend-http-settings"
+
+  validation {
+    condition     = trimspace(var.app_gateway_backend_http_settings_name) != ""
+    error_message = "`app_gateway_backend_http_settings_name` cannot be empty."
+  }
+}
+
+variable "app_gateway_backend_http_settings_path" {
+  type        = string
+  description = "(Optional) Backend path for Application Gateway HTTP settings."
+  default     = "/"
+
+  validation {
+    condition     = trimspace(var.app_gateway_backend_http_settings_path) != ""
+    error_message = "`app_gateway_backend_http_settings_path` cannot be empty."
+  }
+}
+
+variable "app_gateway_backend_http_settings_port" {
+  type        = number
+  description = "(Optional) Backend port for Application Gateway HTTP settings."
+  default     = 80
+
+  validation {
+    condition     = var.app_gateway_backend_http_settings_port >= 1 && var.app_gateway_backend_http_settings_port <= 65535
+    error_message = "`app_gateway_backend_http_settings_port` must be between 1 and 65535."
+  }
+}
+
+variable "app_gateway_backend_http_settings_protocol" {
+  type        = string
+  description = "(Optional) Backend protocol for Application Gateway HTTP settings."
+  default     = "Http"
+
+  validation {
+    condition     = contains(["Http", "Https"], var.app_gateway_backend_http_settings_protocol)
+    error_message = "`app_gateway_backend_http_settings_protocol` must be `Http` or `Https`."
+  }
+}
+
+variable "app_gateway_backend_http_settings_request_timeout" {
+  type        = number
+  description = "(Optional) Backend request timeout in seconds for Application Gateway HTTP settings."
+  default     = 30
+
+  validation {
+    condition     = var.app_gateway_backend_http_settings_request_timeout >= 1 && var.app_gateway_backend_http_settings_request_timeout <= 86400
+    error_message = "`app_gateway_backend_http_settings_request_timeout` must be between 1 and 86400 seconds."
+  }
+}
+
+variable "app_gateway_frontend_ip_configuration_name" {
+  type        = string
+  description = "(Optional) Frontend IP configuration name in Application Gateway."
+  default     = "public-frontend"
+
+  validation {
+    condition     = trimspace(var.app_gateway_frontend_ip_configuration_name) != ""
+    error_message = "`app_gateway_frontend_ip_configuration_name` cannot be empty."
+  }
+}
+
+variable "app_gateway_frontend_port" {
+  type        = number
+  description = "(Optional) Frontend listener port for Application Gateway."
+  default     = 443
+
+  validation {
+    condition     = var.app_gateway_frontend_port >= 1 && var.app_gateway_frontend_port <= 65535
+    error_message = "`app_gateway_frontend_port` must be between 1 and 65535."
+  }
+}
+
+variable "app_gateway_frontend_port_name" {
+  type        = string
+  description = "(Optional) Frontend port name in Application Gateway."
+  default     = "https-443"
+
+  validation {
+    condition     = trimspace(var.app_gateway_frontend_port_name) != ""
+    error_message = "`app_gateway_frontend_port_name` cannot be empty."
+  }
+}
+
+variable "app_gateway_gateway_ip_configuration_name" {
+  type        = string
+  description = "(Optional) Gateway IP configuration name in Application Gateway."
+  default     = "gateway-ip-config"
+
+  validation {
+    condition     = trimspace(var.app_gateway_gateway_ip_configuration_name) != ""
+    error_message = "`app_gateway_gateway_ip_configuration_name` cannot be empty."
+  }
+}
+
+variable "app_gateway_http_listener_name" {
+  type        = string
+  description = "(Optional) HTTP listener name in Application Gateway."
+  default     = "https-listener"
+
+  validation {
+    condition     = trimspace(var.app_gateway_http_listener_name) != ""
+    error_message = "`app_gateway_http_listener_name` cannot be empty."
+  }
+}
+
+variable "app_gateway_http_listener_protocol" {
+  type        = string
+  description = "(Optional) HTTP listener protocol in Application Gateway."
+  default     = "Https"
+
+  validation {
+    condition     = contains(["Http", "Https"], var.app_gateway_http_listener_protocol)
+    error_message = "`app_gateway_http_listener_protocol` must be `Http` or `Https`."
+  }
+}
+
+variable "app_gateway_request_routing_rule_name" {
+  type        = string
+  description = "(Optional) Request routing rule name in Application Gateway."
+  default     = "demo-routing-rule"
+
+  validation {
+    condition     = trimspace(var.app_gateway_request_routing_rule_name) != ""
+    error_message = "`app_gateway_request_routing_rule_name` cannot be empty."
+  }
+}
+
+variable "app_gateway_request_routing_rule_priority" {
+  type        = number
+  description = "(Optional) Request routing rule priority in Application Gateway."
+  default     = 100
+
+  validation {
+    condition     = var.app_gateway_request_routing_rule_priority >= 1 && var.app_gateway_request_routing_rule_priority <= 20000
+    error_message = "`app_gateway_request_routing_rule_priority` must be between 1 and 20000."
+  }
+}
+
+variable "app_gateway_request_routing_rule_type" {
+  type        = string
+  description = "(Optional) Request routing rule type in Application Gateway."
+  default     = "Basic"
+
+  validation {
+    condition     = contains(["Basic", "PathBasedRouting"], var.app_gateway_request_routing_rule_type)
+    error_message = "`app_gateway_request_routing_rule_type` must be `Basic` or `PathBasedRouting`."
+  }
+}
+
+variable "app_gateway_sku_name" {
+  type        = string
+  description = "(Optional) SKU name for Application Gateway."
+  default     = "Standard_v2"
+
+  validation {
+    condition     = trimspace(var.app_gateway_sku_name) != ""
+    error_message = "`app_gateway_sku_name` cannot be empty."
+  }
+}
+
+variable "app_gateway_sku_tier" {
+  type        = string
+  description = "(Optional) SKU tier for Application Gateway."
+  default     = "Standard_v2"
+
+  validation {
+    condition     = trimspace(var.app_gateway_sku_tier) != ""
+    error_message = "`app_gateway_sku_tier` cannot be empty."
+  }
+}
+
+variable "app_gateway_ssl_certificate_name" {
+  type        = string
+  description = "(Optional) SSL certificate name in Application Gateway."
+  default     = "tls-from-key-vault"
+
+  validation {
+    condition     = trimspace(var.app_gateway_ssl_certificate_name) != ""
+    error_message = "`app_gateway_ssl_certificate_name` cannot be empty."
+  }
+}
+
 variable "app_gateway_subnet_prefix" {
   type        = string
   description = "(Optional) CIDR prefix used by the dedicated Application Gateway subnet."

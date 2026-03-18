@@ -371,6 +371,95 @@ variable "azure_devops_jwt_user_claim" {
   }
 }
 
+variable "azure_devops_pipeline_branch_name" {
+  type        = string
+  description = "(Optional) Branch used by the Azure DevOps pipeline definition. Leave empty to use the repository default branch for Azure Repos Git or `main` for GitHub."
+  default     = ""
+}
+
+variable "azure_devops_pipeline_folder" {
+  type        = string
+  description = "(Optional) Azure DevOps pipeline folder path. Use `\\` for the root folder."
+  default     = "\\"
+
+  validation {
+    condition     = var.azure_devops_pipeline_folder == "\\" || (trimspace(var.azure_devops_pipeline_folder) != "" && !endswith(var.azure_devops_pipeline_folder, "\\"))
+    error_message = "`azure_devops_pipeline_folder` must be `\\` or a non-empty folder path that does not end with `\\`."
+  }
+}
+
+variable "azure_devops_pipeline_name" {
+  type        = string
+  description = "(Optional) Name of the Azure DevOps pipeline created by Terraform."
+  default     = "vault-pki-renewal"
+
+  validation {
+    condition     = trimspace(var.azure_devops_pipeline_name) != ""
+    error_message = "`azure_devops_pipeline_name` cannot be empty."
+  }
+}
+
+variable "azure_devops_pipeline_yaml_path" {
+  type        = string
+  description = "(Optional) Path to the Azure Pipelines YAML file in the source repository."
+  default     = "azure-pipelines.yml"
+
+  validation {
+    condition     = trimspace(var.azure_devops_pipeline_yaml_path) != ""
+    error_message = "`azure_devops_pipeline_yaml_path` cannot be empty."
+  }
+}
+
+variable "azure_devops_project_name" {
+  type        = string
+  description = "(Optional) Azure DevOps project name where the pipeline will be created. Leave empty to skip Azure DevOps pipeline creation."
+  default     = ""
+}
+
+variable "azure_devops_repository_id" {
+  type        = string
+  description = "(Optional) Repository identifier used by Azure DevOps pipeline creation for external repositories. For GitHub, use `<owner>/<repo>`. Leave empty when `azure_devops_repository_type` is `TfsGit`."
+  default     = ""
+
+  validation {
+    condition     = var.azure_devops_repository_type == "TfsGit" || trimspace(var.azure_devops_repository_id) != ""
+    error_message = "`azure_devops_repository_id` must be set when `azure_devops_repository_type` is not `TfsGit`."
+  }
+}
+
+variable "azure_devops_repository_name" {
+  type        = string
+  description = "(Optional) Azure Repos Git repository name used when `azure_devops_repository_type` is `TfsGit`."
+  default     = ""
+
+  validation {
+    condition     = var.azure_devops_repository_type != "TfsGit" || trimspace(var.azure_devops_repository_name) != ""
+    error_message = "`azure_devops_repository_name` must be set when `azure_devops_repository_type` is `TfsGit`."
+  }
+}
+
+variable "azure_devops_repository_service_connection_id" {
+  type        = string
+  description = "(Optional) Azure DevOps service connection ID for external repositories such as GitHub. Leave empty for `TfsGit`."
+  default     = ""
+
+  validation {
+    condition     = !contains(["GitHub", "GitHubEnterprise"], var.azure_devops_repository_type) || trimspace(var.azure_devops_repository_service_connection_id) != ""
+    error_message = "`azure_devops_repository_service_connection_id` must be set when `azure_devops_repository_type` is `GitHub` or `GitHubEnterprise`."
+  }
+}
+
+variable "azure_devops_repository_type" {
+  type        = string
+  description = "(Optional) Repository type used by the Azure DevOps pipeline definition. Supported values are `GitHub`, `GitHubEnterprise`, and `TfsGit`."
+  default     = "GitHub"
+
+  validation {
+    condition     = contains(["GitHub", "GitHubEnterprise", "TfsGit"], var.azure_devops_repository_type)
+    error_message = "`azure_devops_repository_type` must be one of `GitHub`, `GitHubEnterprise`, or `TfsGit`."
+  }
+}
+
 variable "bootstrap_pfx_password_kv_mount" {
   type        = string
   description = "(Optional) Vault KVv2 mount path where the generated bootstrap PFX password is stored."
@@ -401,8 +490,8 @@ variable "bootstrap_pfx_password_create_kv_mount" {
 
 variable "bootstrap_pfx_password_store_in_vault" {
   type        = bool
-  description = "(Optional) When true, Terraform writes the generated bootstrap PFX password into Vault KVv2; set false when write permissions are not granted or secret storage is managed outside this module."
-  default     = true
+  description = "(Optional) When true, Terraform writes the generated bootstrap PFX password into Vault KVv2. Defaults to false so least-privilege Vault configurations do not require KV write access unless explicitly enabled."
+  default     = false
 }
 
 variable "enable_azure_devops_jwt_auth" {

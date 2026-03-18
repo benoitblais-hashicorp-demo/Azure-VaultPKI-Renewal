@@ -33,12 +33,12 @@ output "vault_azure_devops_jwt_role_name" {
   value       = try(vault_jwt_auth_backend_role.azure_devops[0].role_name, null)
 }
 
-output "vault_bootstrap_pfx_password_secret_path" {
-  description = "Vault KVv2 secret path storing generated bootstrap PFX password"
-  value       = vault_kv_secret_v2.bootstrap_pfx_password.path
-}
-
 output "vault_bootstrap_pfx_password_kv_mount" {
   description = "Vault KVv2 mount used for generated bootstrap PFX password storage"
   value       = var.bootstrap_pfx_password_kv_mount
+}
+
+output "vault_bootstrap_pfx_password_secret_path" {
+  description = "Vault KVv2 secret path storing generated bootstrap PFX password"
+  value       = vault_kv_secret_v2.bootstrap_pfx_password.path
 }

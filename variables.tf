@@ -58,7 +58,7 @@ variable "app_gateway_backend_address_pool_name" {
 
   validation {
     condition     = trimspace(var.app_gateway_backend_address_pool_name) != ""
-    error_message = "`app_gateway_backend_address_pool_name` cannot be empty."
+    error_message = "`app_gateway_backend_address_pool_name` must not be empty."
   }
 }
 
@@ -80,7 +80,7 @@ variable "app_gateway_backend_http_settings_name" {
 
   validation {
     condition     = trimspace(var.app_gateway_backend_http_settings_name) != ""
-    error_message = "`app_gateway_backend_http_settings_name` cannot be empty."
+    error_message = "`app_gateway_backend_http_settings_name` must not be empty."
   }
 }
 
@@ -91,7 +91,7 @@ variable "app_gateway_backend_http_settings_path" {
 
   validation {
     condition     = trimspace(var.app_gateway_backend_http_settings_path) != ""
-    error_message = "`app_gateway_backend_http_settings_path` cannot be empty."
+    error_message = "`app_gateway_backend_http_settings_path` must not be empty."
   }
 }
 
@@ -135,7 +135,7 @@ variable "app_gateway_frontend_ip_configuration_name" {
 
   validation {
     condition     = trimspace(var.app_gateway_frontend_ip_configuration_name) != ""
-    error_message = "`app_gateway_frontend_ip_configuration_name` cannot be empty."
+    error_message = "`app_gateway_frontend_ip_configuration_name` must not be empty."
   }
 }
 
@@ -157,7 +157,7 @@ variable "app_gateway_frontend_port_name" {
 
   validation {
     condition     = trimspace(var.app_gateway_frontend_port_name) != ""
-    error_message = "`app_gateway_frontend_port_name` cannot be empty."
+    error_message = "`app_gateway_frontend_port_name` must not be empty."
   }
 }
 
@@ -168,7 +168,7 @@ variable "app_gateway_gateway_ip_configuration_name" {
 
   validation {
     condition     = trimspace(var.app_gateway_gateway_ip_configuration_name) != ""
-    error_message = "`app_gateway_gateway_ip_configuration_name` cannot be empty."
+    error_message = "`app_gateway_gateway_ip_configuration_name` must not be empty."
   }
 }
 
@@ -179,7 +179,7 @@ variable "app_gateway_http_listener_name" {
 
   validation {
     condition     = trimspace(var.app_gateway_http_listener_name) != ""
-    error_message = "`app_gateway_http_listener_name` cannot be empty."
+    error_message = "`app_gateway_http_listener_name` must not be empty."
   }
 }
 
@@ -201,7 +201,7 @@ variable "app_gateway_request_routing_rule_name" {
 
   validation {
     condition     = trimspace(var.app_gateway_request_routing_rule_name) != ""
-    error_message = "`app_gateway_request_routing_rule_name` cannot be empty."
+    error_message = "`app_gateway_request_routing_rule_name` must not be empty."
   }
 }
 
@@ -234,7 +234,7 @@ variable "app_gateway_sku_name" {
 
   validation {
     condition     = trimspace(var.app_gateway_sku_name) != ""
-    error_message = "`app_gateway_sku_name` cannot be empty."
+    error_message = "`app_gateway_sku_name` must not be empty."
   }
 }
 
@@ -245,7 +245,7 @@ variable "app_gateway_sku_tier" {
 
   validation {
     condition     = trimspace(var.app_gateway_sku_tier) != ""
-    error_message = "`app_gateway_sku_tier` cannot be empty."
+    error_message = "`app_gateway_sku_tier` must not be empty."
   }
 }
 
@@ -256,7 +256,7 @@ variable "app_gateway_ssl_certificate_name" {
 
   validation {
     condition     = trimspace(var.app_gateway_ssl_certificate_name) != ""
-    error_message = "`app_gateway_ssl_certificate_name` cannot be empty."
+    error_message = "`app_gateway_ssl_certificate_name` must not be empty."
   }
 }
 
@@ -275,6 +275,11 @@ variable "azure_devops_jwt_backend_description" {
   type        = string
   description = "(Optional) Description for the Azure DevOps JWT/OIDC auth backend in Vault."
   default     = "JWT/OIDC auth backend for Azure DevOps pipelines"
+
+  validation {
+    condition     = trimspace(var.azure_devops_jwt_backend_description) != ""
+    error_message = "`azure_devops_jwt_backend_description` must not be empty."
+  }
 }
 
 variable "azure_devops_jwt_backend_path" {
@@ -284,7 +289,7 @@ variable "azure_devops_jwt_backend_path" {
 
   validation {
     condition     = trimspace(var.azure_devops_jwt_backend_path) != ""
-    error_message = "`azure_devops_jwt_backend_path` cannot be empty."
+    error_message = "`azure_devops_jwt_backend_path` must not be empty."
   }
 }
 
@@ -303,6 +308,11 @@ variable "azure_devops_jwt_bound_claims" {
   type        = map(string)
   description = "(Optional) Additional bound claims for the Azure DevOps JWT role."
   default     = {}
+
+  validation {
+    condition     = alltrue([for claim_key, claim_value in var.azure_devops_jwt_bound_claims : trimspace(claim_key) != "" && trimspace(claim_value) != ""])
+    error_message = "`azure_devops_jwt_bound_claims` must contain only non-empty keys and values."
+  }
 }
 
 variable "azure_devops_jwt_bound_issuer" {
@@ -334,7 +344,7 @@ variable "azure_devops_jwt_role_name" {
 
   validation {
     condition     = trimspace(var.azure_devops_jwt_role_name) != ""
-    error_message = "`azure_devops_jwt_role_name` cannot be empty."
+    error_message = "`azure_devops_jwt_role_name` must not be empty."
   }
 }
 
@@ -367,7 +377,7 @@ variable "azure_devops_jwt_user_claim" {
 
   validation {
     condition     = trimspace(var.azure_devops_jwt_user_claim) != ""
-    error_message = "`azure_devops_jwt_user_claim` cannot be empty."
+    error_message = "`azure_devops_jwt_user_claim` must not be empty."
   }
 }
 
@@ -375,6 +385,11 @@ variable "azure_devops_pipeline_branch_name" {
   type        = string
   description = "(Optional) Branch used by the Azure DevOps pipeline definition. Leave empty to use the repository default branch for Azure Repos Git or `main` for GitHub."
   default     = ""
+
+  validation {
+    condition     = var.azure_devops_pipeline_branch_name == "" || trimspace(var.azure_devops_pipeline_branch_name) == var.azure_devops_pipeline_branch_name
+    error_message = "`azure_devops_pipeline_branch_name` must not include leading or trailing whitespace."
+  }
 }
 
 variable "azure_devops_pipeline_folder" {
@@ -395,7 +410,7 @@ variable "azure_devops_pipeline_name" {
 
   validation {
     condition     = trimspace(var.azure_devops_pipeline_name) != ""
-    error_message = "`azure_devops_pipeline_name` cannot be empty."
+    error_message = "`azure_devops_pipeline_name` must not be empty."
   }
 }
 
@@ -406,7 +421,7 @@ variable "azure_devops_pipeline_yaml_path" {
 
   validation {
     condition     = trimspace(var.azure_devops_pipeline_yaml_path) != ""
-    error_message = "`azure_devops_pipeline_yaml_path` cannot be empty."
+    error_message = "`azure_devops_pipeline_yaml_path` must not be empty."
   }
 }
 
@@ -414,6 +429,11 @@ variable "azure_devops_project_name" {
   type        = string
   description = "(Optional) Azure DevOps project name where the pipeline will be created. Leave empty to skip Azure DevOps pipeline creation."
   default     = ""
+
+  validation {
+    condition     = var.azure_devops_project_name == "" || trimspace(var.azure_devops_project_name) == var.azure_devops_project_name
+    error_message = "`azure_devops_project_name` must not include leading or trailing whitespace."
+  }
 }
 
 variable "azure_devops_repository_id" {
@@ -422,8 +442,8 @@ variable "azure_devops_repository_id" {
   default     = ""
 
   validation {
-    condition     = var.azure_devops_repository_type == "TfsGit" || trimspace(var.azure_devops_repository_id) != ""
-    error_message = "`azure_devops_repository_id` must be set when `azure_devops_repository_type` is not `TfsGit`."
+    condition     = trimspace(var.azure_devops_project_name) == "" || var.azure_devops_repository_type == "TfsGit" || trimspace(var.azure_devops_repository_id) != ""
+    error_message = "`azure_devops_repository_id` must be set when `azure_devops_project_name` is set and `azure_devops_repository_type` is not `TfsGit`."
   }
 }
 
@@ -433,8 +453,8 @@ variable "azure_devops_repository_name" {
   default     = ""
 
   validation {
-    condition     = var.azure_devops_repository_type != "TfsGit" || trimspace(var.azure_devops_repository_name) != ""
-    error_message = "`azure_devops_repository_name` must be set when `azure_devops_repository_type` is `TfsGit`."
+    condition     = trimspace(var.azure_devops_project_name) == "" || var.azure_devops_repository_type != "TfsGit" || trimspace(var.azure_devops_repository_name) != ""
+    error_message = "`azure_devops_repository_name` must be set when `azure_devops_project_name` is set and `azure_devops_repository_type` is `TfsGit`."
   }
 }
 
@@ -444,8 +464,8 @@ variable "azure_devops_repository_service_connection_id" {
   default     = ""
 
   validation {
-    condition     = !contains(["GitHub", "GitHubEnterprise"], var.azure_devops_repository_type) || trimspace(var.azure_devops_repository_service_connection_id) != ""
-    error_message = "`azure_devops_repository_service_connection_id` must be set when `azure_devops_repository_type` is `GitHub` or `GitHubEnterprise`."
+    condition     = trimspace(var.azure_devops_project_name) == "" || !contains(["GitHub", "GitHubEnterprise"], var.azure_devops_repository_type) || trimspace(var.azure_devops_repository_service_connection_id) != ""
+    error_message = "`azure_devops_repository_service_connection_id` must be set when `azure_devops_project_name` is set and `azure_devops_repository_type` is `GitHub` or `GitHubEnterprise`."
   }
 }
 
@@ -460,6 +480,12 @@ variable "azure_devops_repository_type" {
   }
 }
 
+variable "bootstrap_pfx_password_create_kv_mount" {
+  type        = bool
+  description = "(Optional) When true, Terraform creates the KVv2 mount for bootstrap PFX password storage; set false when the mount already exists or mount management is not permitted."
+  default     = false
+}
+
 variable "bootstrap_pfx_password_kv_mount" {
   type        = string
   description = "(Optional) Vault KVv2 mount path where the generated bootstrap PFX password is stored."
@@ -467,7 +493,7 @@ variable "bootstrap_pfx_password_kv_mount" {
 
   validation {
     condition     = trimspace(var.bootstrap_pfx_password_kv_mount) != ""
-    error_message = "`bootstrap_pfx_password_kv_mount` cannot be empty."
+    error_message = "`bootstrap_pfx_password_kv_mount` must not be empty."
   }
 }
 
@@ -478,14 +504,8 @@ variable "bootstrap_pfx_password_kv_path" {
 
   validation {
     condition     = trimspace(var.bootstrap_pfx_password_kv_path) != ""
-    error_message = "`bootstrap_pfx_password_kv_path` cannot be empty."
+    error_message = "`bootstrap_pfx_password_kv_path` must not be empty."
   }
-}
-
-variable "bootstrap_pfx_password_create_kv_mount" {
-  type        = bool
-  description = "(Optional) When true, Terraform creates the KVv2 mount for bootstrap PFX password storage; set false when the mount already exists or mount management is not permitted."
-  default     = false
 }
 
 variable "bootstrap_pfx_password_store_in_vault" {
@@ -540,7 +560,7 @@ variable "location" {
 
   validation {
     condition     = trimspace(var.location) != ""
-    error_message = "`location` cannot be empty."
+    error_message = "`location` must not be empty."
   }
 }
 
@@ -551,7 +571,7 @@ variable "name_prefix" {
 
   validation {
     condition     = trimspace(var.name_prefix) != ""
-    error_message = "`name_prefix` cannot be empty."
+    error_message = "`name_prefix` must not be empty."
   }
 }
 
@@ -562,7 +582,18 @@ variable "resource_group_name" {
 
   validation {
     condition     = trimspace(var.resource_group_name) != ""
-    error_message = "`resource_group_name` cannot be empty."
+    error_message = "`resource_group_name` must not be empty."
+  }
+}
+
+variable "tags" {
+  type        = map(string)
+  description = "(Optional) Tags applied to Azure resources."
+  default     = {}
+
+  validation {
+    condition     = alltrue([for tag_key, tag_value in var.tags : trimspace(tag_key) != "" && trimspace(tag_value) != ""])
+    error_message = "`tags` must contain only non-empty keys and values."
   }
 }
 
@@ -577,12 +608,6 @@ variable "vault_namespace" {
   }
 }
 
-variable "tags" {
-  type        = map(string)
-  description = "(Optional) Tags applied to Azure resources."
-  default     = {}
-}
-
 variable "vault_pki_path" {
   type        = string
   description = "(Optional) Vault PKI mount path used for certificate issuance."
@@ -590,7 +615,7 @@ variable "vault_pki_path" {
 
   validation {
     condition     = trimspace(var.vault_pki_path) != ""
-    error_message = "`vault_pki_path` cannot be empty."
+    error_message = "`vault_pki_path` must not be empty."
   }
 }
 
@@ -601,7 +626,7 @@ variable "vault_pki_role" {
 
   validation {
     condition     = trimspace(var.vault_pki_role) != ""
-    error_message = "`vault_pki_role` cannot be empty."
+    error_message = "`vault_pki_role` must not be empty."
   }
 }
 

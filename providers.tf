@@ -4,6 +4,4 @@ provider "azurerm" {
   resource_provider_registrations = "none"
 }
 
-provider "azuredevops" {}
-
 provider "vault" {}

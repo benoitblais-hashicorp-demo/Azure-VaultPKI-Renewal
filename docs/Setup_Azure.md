@@ -3,13 +3,20 @@
 This guide creates an Azure Linux VM, installs the HCP Terraform Agent, and uses a User Assigned Managed Identity (UAMI) so Terraform
 runs can provision Azure resources without an SPN secret.
 
+## Architecture
+
+1. A Linux VM runs the HCP Terraform Agent.
+2. The VM is assigned a UAMI.
+3. HCP Terraform workspace runs in **Agent** execution mode.
+4. AzureRM provider authenticates through MSI using workspace environment variables.
+
 ## Prerequisites
 
-- Azure Cloud Shell (Bash)
-- Access to the target Azure subscription
+- Azure subscription where infrastructure will be created
+- Permission to create resource groups, managed identities, VMs, and role assignments
 - HCP Terraform organization and workspace
-- HCP Terraform Agent Pool already created
-- Agent Pool Token generated from HCP Terraform
+- Existing HCP Terraform Agent Pool and agent token
+- Azure CLI access (Cloud Shell or local shell)
 
 ## 1) Define Variables
 
@@ -55,16 +62,16 @@ export UAMI_PRINCIPAL_ID=$(az identity show -g "$RG_NAME" -n "$UAMI_NAME" --quer
 export TENANT_ID=$(az account show --query tenantId -o tsv)
 ```
 
-## 4) Assign RBAC to Managed Identity
+## 4) Assign Azure RBAC to the Managed Identity
 
-For demo simplicity, grant your HCP Terraform agent identity Contributor on the subscription:
+For broad testing, assign `Contributor` at subscription scope:
 
 ```bash
 az role assignment create \
   --assignee-object-id "$UAMI_PRINCIPAL_ID" \
   --assignee-principal-type ServicePrincipal \
   --role "Contributor" \
-  --scope "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RG_NAME"
+  --scope "/subscriptions/$SUBSCRIPTION_ID"
 ```
 
 ## 5) Create Linux VM and Attach UAMI
@@ -198,11 +205,11 @@ EOF
 
 ## 7) Configure HCP Terraform Workspace
 
-In HCP Terraform:
+In HCP Terraform workspace settings:
 
-1. Set workspace **Execution Mode** to **Agent**.
-2. Select your agent pool.
-3. Add these environment variables in the workspace:
+1. Set **Execution Mode** to **Agent**.
+2. Select your Agent Pool.
+3. Add these environment variables:
 
 ```bash
 ARM_USE_MSI=true

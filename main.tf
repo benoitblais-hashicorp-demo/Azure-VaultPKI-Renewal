@@ -157,7 +157,7 @@ resource "vault_kv_secret_v2" "bootstrap_pfx_password" {
     bootstrap_pfx_password = random_password.bootstrap_pfx_password.result
   })
 
-  depends_on = var.bootstrap_pfx_password_create_kv_mount ? [vault_mount.bootstrap_pfx_password_kvv2[0]] : []
+  depends_on = [vault_mount.bootstrap_pfx_password_kvv2]
 }
 
 resource "vault_pki_secret_backend_role" "bootstrap" {

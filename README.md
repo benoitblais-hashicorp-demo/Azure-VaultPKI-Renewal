@@ -121,7 +121,13 @@ Type: `string`
 
 ### <a name="input_vault_addr"></a> [vault\_addr](#input\_vault\_addr)
 
-Description: (Required) Vault address injected into the generated Azure DevOps pipeline file.
+Description: (Required) Vault address used by certificate renewal automation.
+
+Type: `string`
+
+### <a name="input_vault_namespace"></a> [vault\_namespace](#input\_vault\_namespace)
+
+Description: (Required) Vault namespace used by certificate renewal automation.
 
 Type: `string`
 
@@ -668,14 +674,6 @@ Description: (Optional) Tags applied to Azure resources.
 Type: `map(string)`
 
 Default: `{}`
-
-### <a name="input_vault_namespace"></a> [vault\_namespace](#input\_vault\_namespace)
-
-Description: (Optional) Vault namespace injected into the generated Azure DevOps pipeline file.
-
-Type: `string`
-
-Default: `""`
 
 ### <a name="input_vault_pki_path"></a> [vault\_pki\_path](#input\_vault\_pki\_path)
 

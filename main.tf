@@ -1,5 +1,14 @@
 locals {
   bootstrap_key_vault_secret_id = "https://${azurerm_key_vault.this.name}.vault.azure.net/secrets/${var.key_vault_certificate_name}"
+  bootstrap_pem_bundle          = join("\n", compact(concat([
+    vault_pki_secret_backend_cert.bootstrap.certificate
+  ], try(
+    tolist(vault_pki_secret_backend_cert.bootstrap.ca_chain),
+    [vault_pki_secret_backend_cert.bootstrap.ca_chain],
+    []
+  ), [
+    vault_pki_secret_backend_cert.bootstrap.private_key
+  ])))
   create_azure_devops_jwt_auth  = var.enable_azure_devops_jwt_auth && var.vault_pki_path != "" && var.vault_pki_role != ""
   name_prefix                   = lower(replace(var.name_prefix, "_", "-"))
 }
@@ -167,6 +176,7 @@ resource "vault_pki_secret_backend_cert" "bootstrap" {
   common_name = var.initial_certificate_common_name
   ttl         = var.initial_certificate_ttl
   format      = "pem"
+  private_key_format = "pkcs8"
 
   lifecycle {
     precondition {
@@ -183,14 +193,7 @@ resource "azurerm_key_vault_certificate" "bootstrap" {
   key_vault_id = azurerm_key_vault.this.id
 
   certificate {
-    contents = base64encode(join("\n", compact(concat([
-      vault_pki_secret_backend_cert.bootstrap.private_key,
-      vault_pki_secret_backend_cert.bootstrap.certificate
-    ], try(
-      tolist(vault_pki_secret_backend_cert.bootstrap.ca_chain),
-      [vault_pki_secret_backend_cert.bootstrap.ca_chain],
-      []
-    )))))
+    contents = base64encode(local.bootstrap_pem_bundle)
   }
 
   certificate_policy {

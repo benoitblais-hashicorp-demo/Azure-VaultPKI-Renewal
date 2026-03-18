@@ -57,7 +57,7 @@ export TENANT_ID=$(az account show --query tenantId -o tsv)
 
 ## 4) Assign RBAC to Managed Identity
 
-Use least privilege for your scope. For demo simplicity, Contributor on the resource group:
+For demo simplicity, grant your HCP Terraform agent identity Contributor on the subscription:
 
 ```bash
 az role assignment create \
@@ -67,30 +67,7 @@ az role assignment create \
   --scope "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RG_NAME"
 ```
 
-Grant your HCP Terraform agent identity enough scope to create/read the demo resource group and its resources.
-
-```bash
-# Use your actual agent principal object ID (from step 3) and subscription
-az role assignment create \
-  --assignee-object-id "$UAMI_PRINCIPAL_ID" \
-  --assignee-principal-type ServicePrincipal \
-  --role "Contributor" \
-  --scope "/subscriptions/$SUBSCRIPTION_ID"
-```
-
-Optional (only if Terraform must manage role assignments itself):
-
-```bash
-# az role assignment create \
-#   --assignee-object-id "$UAMI_PRINCIPAL_ID" \
-#   --assignee-principal-type ServicePrincipal \
-#   --role "User Access Administrator" \
-#   --scope "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RG_NAME"
-```
-
 ## 5) Create Linux VM and Attach UAMI
-
-This setup uses an approved base image from your image-factory subscription (`hashicorp02-image-factory-prod`).
 
 Set your approved image definition ID (Azure Compute Gallery):
 
@@ -235,23 +212,6 @@ ARM_TENANT_ID=<TENANT_ID>
 ARM_ENVIRONMENT=public
 ```
 
-If this workspace also needs Vault provider access using HCP Terraform dynamic credentials (JWT/OIDC), add:
-
-```bash
-TFC_VAULT_PROVIDER_AUTH=true
-TFC_VAULT_ADDR=<vault-cluster-url>
-TFC_VAULT_NAMESPACE=<namespace_path>
-TFC_VAULT_RUN_ROLE=<role_name>
-```
-
-Use outputs from your `HCPVault-PKI` deployment:
-
-- `pki_intermediate_namespace_path`
-- `jwt_hcp_role_name_azure`
-
-Note: `azure_auth_backend_path` is for Azure DevOps JWT/OIDC backend. `TFC_VAULT_RUN_ROLE` for HCP Terraform workspace runs should use
-the HCP JWT role output.
-
 ## 8) Validation
 
 ### Validate Agent Registration
@@ -263,15 +223,3 @@ the HCP JWT role output.
 ```bash
 ssh "$ADMIN_USER@$VM_PUBLIC_IP" "sudo journalctl -u tfc-agent -n 200 --no-pager"
 ```
-
-### Validate Managed Identity Access
-
-From an agent-based Terraform run, verify provider authentication succeeds without SPN secret variables.
-
-## Security Notes
-
-- Treat `TFC_AGENT_TOKEN` as sensitive and rotate it regularly.
-- Prefer private networking, NSGs, and no public IP for production.
-- Scope RBAC permissions to least privilege.
-- Use sensitive workspace variables for secrets.
-- Ensure the identity creating the VM has read access to the selected Shared Image Gallery image version in the image-factory subscription.

@@ -216,64 +216,64 @@ resource "azurerm_application_gateway" "this" {
   tags                = var.tags
 
   sku {
-    name = "Standard_v2"
-    tier = "Standard_v2"
+    name = var.app_gateway_sku_name
+    tier = var.app_gateway_sku_tier
   }
 
   autoscale_configuration {
-    min_capacity = 1
-    max_capacity = 2
+    min_capacity = var.app_gateway_autoscale_min_capacity
+    max_capacity = var.app_gateway_autoscale_max_capacity
   }
 
   gateway_ip_configuration {
-    name      = "gateway-ip-config"
+    name      = var.app_gateway_gateway_ip_configuration_name
     subnet_id = azurerm_subnet.app_gateway.id
   }
 
   frontend_port {
-    name = "https-443"
-    port = 443
+    name = var.app_gateway_frontend_port_name
+    port = var.app_gateway_frontend_port
   }
 
   frontend_ip_configuration {
-    name                 = "public-frontend"
+    name                 = var.app_gateway_frontend_ip_configuration_name
     public_ip_address_id = azurerm_public_ip.app_gateway.id
   }
 
   backend_address_pool {
-    name  = "demo-backend-pool"
-    fqdns = ["example.com"]
+    name  = var.app_gateway_backend_address_pool_name
+    fqdns = var.app_gateway_backend_address_pool_fqdns
   }
 
   backend_http_settings {
-    name                  = "demo-backend-http-settings"
-    cookie_based_affinity = "Disabled"
-    path                  = "/"
-    port                  = 80
-    protocol              = "Http"
-    request_timeout       = 30
+    name                  = var.app_gateway_backend_http_settings_name
+    cookie_based_affinity = var.app_gateway_backend_http_settings_cookie_based_affinity
+    path                  = var.app_gateway_backend_http_settings_path
+    port                  = var.app_gateway_backend_http_settings_port
+    protocol              = var.app_gateway_backend_http_settings_protocol
+    request_timeout       = var.app_gateway_backend_http_settings_request_timeout
   }
 
   ssl_certificate {
-    name                = "tls-from-key-vault"
+    name                = var.app_gateway_ssl_certificate_name
     key_vault_secret_id = local.bootstrap_key_vault_secret_id
   }
 
   http_listener {
-    name                           = "https-listener"
-    frontend_ip_configuration_name = "public-frontend"
-    frontend_port_name             = "https-443"
-    protocol                       = "Https"
-    ssl_certificate_name           = "tls-from-key-vault"
+    name                           = var.app_gateway_http_listener_name
+    frontend_ip_configuration_name = var.app_gateway_frontend_ip_configuration_name
+    frontend_port_name             = var.app_gateway_frontend_port_name
+    protocol                       = var.app_gateway_http_listener_protocol
+    ssl_certificate_name           = var.app_gateway_ssl_certificate_name
   }
 
   request_routing_rule {
-    name                       = "demo-routing-rule"
-    priority                   = 100
-    rule_type                  = "Basic"
-    http_listener_name         = "https-listener"
-    backend_address_pool_name  = "demo-backend-pool"
-    backend_http_settings_name = "demo-backend-http-settings"
+    name                       = var.app_gateway_request_routing_rule_name
+    priority                   = var.app_gateway_request_routing_rule_priority
+    rule_type                  = var.app_gateway_request_routing_rule_type
+    http_listener_name         = var.app_gateway_http_listener_name
+    backend_address_pool_name  = var.app_gateway_backend_address_pool_name
+    backend_http_settings_name = var.app_gateway_backend_http_settings_name
   }
 
   identity {

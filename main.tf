@@ -186,7 +186,7 @@ resource "azurerm_key_vault_certificate" "bootstrap" {
     contents = base64encode(join("\n", compact(concat([
       vault_pki_secret_backend_cert.bootstrap.private_key,
       vault_pki_secret_backend_cert.bootstrap.certificate
-    ], try(
+      ], try(
       tolist(vault_pki_secret_backend_cert.bootstrap.ca_chain),
       [vault_pki_secret_backend_cert.bootstrap.ca_chain],
       []

@@ -129,6 +129,188 @@ Type: `string`
 
 The following input variables are optional (have default values):
 
+### <a name="input_app_gateway_autoscale_max_capacity"></a> [app\_gateway\_autoscale\_max\_capacity](#input\_app\_gateway\_autoscale\_max\_capacity)
+
+Description: (Optional) Maximum autoscale capacity for Application Gateway.
+
+Type: `number`
+
+Default: `2`
+
+### <a name="input_app_gateway_autoscale_min_capacity"></a> [app\_gateway\_autoscale\_min\_capacity](#input\_app\_gateway\_autoscale\_min\_capacity)
+
+Description: (Optional) Minimum autoscale capacity for Application Gateway.
+
+Type: `number`
+
+Default: `1`
+
+### <a name="input_app_gateway_backend_address_pool_fqdns"></a> [app\_gateway\_backend\_address\_pool\_fqdns](#input\_app\_gateway\_backend\_address\_pool\_fqdns)
+
+Description: (Optional) Backend pool FQDNs for Application Gateway.
+
+Type: `list(string)`
+
+Default:
+
+```json
+[
+  "example.com"
+]
+```
+
+### <a name="input_app_gateway_backend_address_pool_name"></a> [app\_gateway\_backend\_address\_pool\_name](#input\_app\_gateway\_backend\_address\_pool\_name)
+
+Description: (Optional) Backend address pool name in Application Gateway.
+
+Type: `string`
+
+Default: `"demo-backend-pool"`
+
+### <a name="input_app_gateway_backend_http_settings_cookie_based_affinity"></a> [app\_gateway\_backend\_http\_settings\_cookie\_based\_affinity](#input\_app\_gateway\_backend\_http\_settings\_cookie\_based\_affinity)
+
+Description: (Optional) Cookie-based affinity mode for backend HTTP settings.
+
+Type: `string`
+
+Default: `"Disabled"`
+
+### <a name="input_app_gateway_backend_http_settings_name"></a> [app\_gateway\_backend\_http\_settings\_name](#input\_app\_gateway\_backend\_http\_settings\_name)
+
+Description: (Optional) Backend HTTP settings name in Application Gateway.
+
+Type: `string`
+
+Default: `"demo-backend-http-settings"`
+
+### <a name="input_app_gateway_backend_http_settings_path"></a> [app\_gateway\_backend\_http\_settings\_path](#input\_app\_gateway\_backend\_http\_settings\_path)
+
+Description: (Optional) Backend path for Application Gateway HTTP settings.
+
+Type: `string`
+
+Default: `"/"`
+
+### <a name="input_app_gateway_backend_http_settings_port"></a> [app\_gateway\_backend\_http\_settings\_port](#input\_app\_gateway\_backend\_http\_settings\_port)
+
+Description: (Optional) Backend port for Application Gateway HTTP settings.
+
+Type: `number`
+
+Default: `80`
+
+### <a name="input_app_gateway_backend_http_settings_protocol"></a> [app\_gateway\_backend\_http\_settings\_protocol](#input\_app\_gateway\_backend\_http\_settings\_protocol)
+
+Description: (Optional) Backend protocol for Application Gateway HTTP settings.
+
+Type: `string`
+
+Default: `"Http"`
+
+### <a name="input_app_gateway_backend_http_settings_request_timeout"></a> [app\_gateway\_backend\_http\_settings\_request\_timeout](#input\_app\_gateway\_backend\_http\_settings\_request\_timeout)
+
+Description: (Optional) Backend request timeout in seconds for Application Gateway HTTP settings.
+
+Type: `number`
+
+Default: `30`
+
+### <a name="input_app_gateway_frontend_ip_configuration_name"></a> [app\_gateway\_frontend\_ip\_configuration\_name](#input\_app\_gateway\_frontend\_ip\_configuration\_name)
+
+Description: (Optional) Frontend IP configuration name in Application Gateway.
+
+Type: `string`
+
+Default: `"public-frontend"`
+
+### <a name="input_app_gateway_frontend_port"></a> [app\_gateway\_frontend\_port](#input\_app\_gateway\_frontend\_port)
+
+Description: (Optional) Frontend listener port for Application Gateway.
+
+Type: `number`
+
+Default: `443`
+
+### <a name="input_app_gateway_frontend_port_name"></a> [app\_gateway\_frontend\_port\_name](#input\_app\_gateway\_frontend\_port\_name)
+
+Description: (Optional) Frontend port name in Application Gateway.
+
+Type: `string`
+
+Default: `"https-443"`
+
+### <a name="input_app_gateway_gateway_ip_configuration_name"></a> [app\_gateway\_gateway\_ip\_configuration\_name](#input\_app\_gateway\_gateway\_ip\_configuration\_name)
+
+Description: (Optional) Gateway IP configuration name in Application Gateway.
+
+Type: `string`
+
+Default: `"gateway-ip-config"`
+
+### <a name="input_app_gateway_http_listener_name"></a> [app\_gateway\_http\_listener\_name](#input\_app\_gateway\_http\_listener\_name)
+
+Description: (Optional) HTTP listener name in Application Gateway.
+
+Type: `string`
+
+Default: `"https-listener"`
+
+### <a name="input_app_gateway_http_listener_protocol"></a> [app\_gateway\_http\_listener\_protocol](#input\_app\_gateway\_http\_listener\_protocol)
+
+Description: (Optional) HTTP listener protocol in Application Gateway.
+
+Type: `string`
+
+Default: `"Https"`
+
+### <a name="input_app_gateway_request_routing_rule_name"></a> [app\_gateway\_request\_routing\_rule\_name](#input\_app\_gateway\_request\_routing\_rule\_name)
+
+Description: (Optional) Request routing rule name in Application Gateway.
+
+Type: `string`
+
+Default: `"demo-routing-rule"`
+
+### <a name="input_app_gateway_request_routing_rule_priority"></a> [app\_gateway\_request\_routing\_rule\_priority](#input\_app\_gateway\_request\_routing\_rule\_priority)
+
+Description: (Optional) Request routing rule priority in Application Gateway.
+
+Type: `number`
+
+Default: `100`
+
+### <a name="input_app_gateway_request_routing_rule_type"></a> [app\_gateway\_request\_routing\_rule\_type](#input\_app\_gateway\_request\_routing\_rule\_type)
+
+Description: (Optional) Request routing rule type in Application Gateway.
+
+Type: `string`
+
+Default: `"Basic"`
+
+### <a name="input_app_gateway_sku_name"></a> [app\_gateway\_sku\_name](#input\_app\_gateway\_sku\_name)
+
+Description: (Optional) SKU name for Application Gateway.
+
+Type: `string`
+
+Default: `"Standard_v2"`
+
+### <a name="input_app_gateway_sku_tier"></a> [app\_gateway\_sku\_tier](#input\_app\_gateway\_sku\_tier)
+
+Description: (Optional) SKU tier for Application Gateway.
+
+Type: `string`
+
+Default: `"Standard_v2"`
+
+### <a name="input_app_gateway_ssl_certificate_name"></a> [app\_gateway\_ssl\_certificate\_name](#input\_app\_gateway\_ssl\_certificate\_name)
+
+Description: (Optional) SSL certificate name in Application Gateway.
+
+Type: `string`
+
+Default: `"tls-from-key-vault"`
+
 ### <a name="input_app_gateway_subnet_prefix"></a> [app\_gateway\_subnet\_prefix](#input\_app\_gateway\_subnet\_prefix)
 
 Description: (Optional) CIDR prefix used by the dedicated Application Gateway subnet.

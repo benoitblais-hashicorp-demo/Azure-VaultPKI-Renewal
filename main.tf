@@ -1,14 +1,9 @@
 locals {
-  bootstrap_key_vault_secret_id = "https://${azurerm_key_vault.this.name}.vault.azure.net/secrets/${var.key_vault_certificate_name}"
-  bootstrap_pem_bundle = join("\n", compact(concat([
-    vault_pki_secret_backend_cert.bootstrap.certificate
-    ], try(
-    tolist(vault_pki_secret_backend_cert.bootstrap.ca_chain),
-    [vault_pki_secret_backend_cert.bootstrap.ca_chain],
-    []
-    ), [
+  bootstrap_key_vault_secret_id = azurerm_key_vault_certificate.bootstrap.versionless_secret_id
+  bootstrap_pem_bundle = join("\n", compact([
+    vault_pki_secret_backend_cert.bootstrap.certificate,
     vault_pki_secret_backend_cert.bootstrap.private_key
-  ])))
+  ]))
   create_azure_devops_jwt_auth = var.enable_azure_devops_jwt_auth && var.vault_pki_path != "" && var.vault_pki_role != ""
   name_prefix                  = lower(replace(var.name_prefix, "_", "-"))
 }
@@ -148,6 +143,8 @@ resource "random_password" "bootstrap_pfx_password" {
 }
 
 resource "vault_mount" "bootstrap_pfx_password_kvv2" {
+  count = var.bootstrap_pfx_password_create_kv_mount ? 1 : 0
+
   path = var.bootstrap_pfx_password_kv_mount
   type = "kv-v2"
 }

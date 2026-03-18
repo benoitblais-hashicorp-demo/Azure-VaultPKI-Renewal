@@ -405,6 +405,14 @@ Type: `string`
 
 Default: `"sub"`
 
+### <a name="input_bootstrap_pfx_password_create_kv_mount"></a> [bootstrap\_pfx\_password\_create\_kv\_mount](#input\_bootstrap\_pfx\_password\_create\_kv\_mount)
+
+Description: (Optional) When true, Terraform creates the KVv2 mount for bootstrap PFX password storage; set false when the mount already exists or mount management is not permitted.
+
+Type: `bool`
+
+Default: `false`
+
 ### <a name="input_bootstrap_pfx_password_kv_mount"></a> [bootstrap\_pfx\_password\_kv\_mount](#input\_bootstrap\_pfx\_password\_kv\_mount)
 
 Description: (Optional) Vault KVv2 mount path where the generated bootstrap PFX password is stored.

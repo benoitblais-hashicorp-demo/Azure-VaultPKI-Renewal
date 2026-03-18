@@ -1,6 +1,7 @@
 # Azure Setup for HCP Terraform Agent with Managed Identity
 
-This guide creates an Azure Linux VM, installs the HCP Terraform Agent, and uses a User Assigned Managed Identity (UAMI) so Terraform runs can provision Azure resources without an SPN secret.
+This guide creates an Azure Linux VM, installs the HCP Terraform Agent, and uses a User Assigned Managed Identity (UAMI) so Terraform
+runs can provision Azure resources without an SPN secret.
 
 ## Prerequisites
 
@@ -64,6 +65,17 @@ az role assignment create \
   --assignee-principal-type ServicePrincipal \
   --role "Contributor" \
   --scope "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RG_NAME"
+```
+
+Grant your HCP Terraform agent identity enough scope to create/read the demo resource group and its resources.
+
+```bash
+# Use your actual agent principal object ID (from step 3) and subscription
+az role assignment create \
+  --assignee-object-id "$UAMI_PRINCIPAL_ID" \
+  --assignee-principal-type ServicePrincipal \
+  --role "Contributor" \
+  --scope "/subscriptions/$SUBSCRIPTION_ID"
 ```
 
 Optional (only if Terraform must manage role assignments itself):
@@ -237,7 +249,8 @@ Use outputs from your `HCPVault-PKI` deployment:
 - `pki_intermediate_namespace_path`
 - `jwt_hcp_role_name_azure`
 
-Note: `azure_auth_backend_path` is for Azure DevOps JWT/OIDC backend. `TFC_VAULT_RUN_ROLE` for HCP Terraform workspace runs should use the HCP JWT role output.
+Note: `azure_auth_backend_path` is for Azure DevOps JWT/OIDC backend. `TFC_VAULT_RUN_ROLE` for HCP Terraform workspace runs should use
+the HCP JWT role output.
 
 ## 8) Validation
 

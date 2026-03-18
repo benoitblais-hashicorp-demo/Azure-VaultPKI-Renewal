@@ -106,8 +106,6 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.64.0)
 
-- <a name="requirement_null"></a> [null](#requirement\_null) (~> 3.2)
-
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.7)
 
 - <a name="requirement_vault"></a> [vault](#requirement\_vault) (~> 5.8.0)

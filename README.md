@@ -95,7 +95,7 @@ You can run the Azure DevOps pipeline manually from the Azure DevOps UI to force
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.6.0, < 2.0.0)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.6.0)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.64.0)
 
@@ -113,7 +113,7 @@ The following input variables are required:
 
 ### <a name="input_subscription_id"></a> [subscription\_id](#input\_subscription\_id)
 
-Description: (Required) Azure subscription ID used by the AzureRM provider
+Description: (Required) Azure subscription ID used by the AzureRM provider.
 
 Type: `string`
 
@@ -123,7 +123,7 @@ The following input variables are optional (have default values):
 
 ### <a name="input_app_gateway_subnet_prefix"></a> [app\_gateway\_subnet\_prefix](#input\_app\_gateway\_subnet\_prefix)
 
-Description: (Optional) CIDR prefix used by the dedicated Application Gateway subnet
+Description: (Optional) CIDR prefix used by the dedicated Application Gateway subnet.
 
 Type: `string`
 
@@ -131,7 +131,7 @@ Default: `"10.20.1.0/24"`
 
 ### <a name="input_azure_devops_jwt_backend_description"></a> [azure\_devops\_jwt\_backend\_description](#input\_azure\_devops\_jwt\_backend\_description)
 
-Description: (Optional) Description for the Azure DevOps JWT/OIDC auth backend in Vault
+Description: (Optional) Description for the Azure DevOps JWT/OIDC auth backend in Vault.
 
 Type: `string`
 
@@ -139,7 +139,7 @@ Default: `"JWT/OIDC auth backend for Azure DevOps pipelines"`
 
 ### <a name="input_azure_devops_jwt_backend_path"></a> [azure\_devops\_jwt\_backend\_path](#input\_azure\_devops\_jwt\_backend\_path)
 
-Description: (Optional) Path of the existing Azure DevOps JWT/OIDC auth backend in Vault
+Description: (Optional) Path for the Azure DevOps JWT/OIDC auth backend in Vault.
 
 Type: `string`
 
@@ -147,7 +147,7 @@ Default: `"jwt_azure_devops"`
 
 ### <a name="input_azure_devops_jwt_bound_audiences"></a> [azure\_devops\_jwt\_bound\_audiences](#input\_azure\_devops\_jwt\_bound\_audiences)
 
-Description: (Optional) Accepted audience claims for Azure DevOps OIDC tokens
+Description: (Optional) Accepted audience claims for the Azure DevOps OIDC tokens.
 
 Type: `list(string)`
 
@@ -161,7 +161,7 @@ Default:
 
 ### <a name="input_azure_devops_jwt_bound_claims"></a> [azure\_devops\_jwt\_bound\_claims](#input\_azure\_devops\_jwt\_bound\_claims)
 
-Description: (Optional) Additional bound claims for the Azure DevOps JWT role
+Description: (Optional) Additional bound claims for the Azure DevOps JWT role.
 
 Type: `map(string)`
 
@@ -169,7 +169,7 @@ Default: `{}`
 
 ### <a name="input_azure_devops_jwt_bound_issuer"></a> [azure\_devops\_jwt\_bound\_issuer](#input\_azure\_devops\_jwt\_bound\_issuer)
 
-Description: (Optional) Expected issuer claim for Azure DevOps OIDC tokens
+Description: (Optional) Expected issuer claim for the Azure DevOps OIDC tokens.
 
 Type: `string`
 
@@ -177,7 +177,7 @@ Default: `"https://vstoken.dev.azure.com"`
 
 ### <a name="input_azure_devops_jwt_discovery_url"></a> [azure\_devops\_jwt\_discovery\_url](#input\_azure\_devops\_jwt\_discovery\_url)
 
-Description: (Optional) OIDC discovery URL used by Vault to validate Azure DevOps tokens
+Description: (Optional) OIDC discovery URL used by Vault to validate Azure DevOps tokens.
 
 Type: `string`
 
@@ -185,7 +185,7 @@ Default: `"https://vstoken.dev.azure.com"`
 
 ### <a name="input_azure_devops_jwt_role_name"></a> [azure\_devops\_jwt\_role\_name](#input\_azure\_devops\_jwt\_role\_name)
 
-Description: (Optional) Vault JWT role name used by Azure DevOps pipeline login
+Description: (Optional) Vault JWT role name for the Azure DevOps pipeline login.
 
 Type: `string`
 
@@ -193,7 +193,7 @@ Default: `"jwt_azure_devops_role"`
 
 ### <a name="input_azure_devops_jwt_token_max_ttl"></a> [azure\_devops\_jwt\_token\_max\_ttl](#input\_azure\_devops\_jwt\_token\_max\_ttl)
 
-Description: (Optional) Maximum lifetime in seconds for Vault tokens issued to Azure DevOps JWT logins
+Description: (Optional) Maximum lifetime in seconds for Vault tokens issued to Azure DevOps JWT logins.
 
 Type: `number`
 
@@ -201,7 +201,7 @@ Default: `600`
 
 ### <a name="input_azure_devops_jwt_token_ttl"></a> [azure\_devops\_jwt\_token\_ttl](#input\_azure\_devops\_jwt\_token\_ttl)
 
-Description: (Optional) Default lifetime in seconds for Vault tokens issued to Azure DevOps JWT logins
+Description: (Optional) Default lifetime in seconds for Vault tokens issued to Azure DevOps JWT logins.
 
 Type: `number`
 
@@ -209,7 +209,7 @@ Default: `300`
 
 ### <a name="input_azure_devops_jwt_user_claim"></a> [azure\_devops\_jwt\_user\_claim](#input\_azure\_devops\_jwt\_user\_claim)
 
-Description: (Optional) JWT claim used as user identity in the Vault Azure DevOps JWT role
+Description: (Optional) JWT claim used as user identity in the Vault Azure DevOps JWT role.
 
 Type: `string`
 
@@ -217,15 +217,15 @@ Default: `"sub"`
 
 ### <a name="input_bootstrap_pfx_password_kv_mount"></a> [bootstrap\_pfx\_password\_kv\_mount](#input\_bootstrap\_pfx\_password\_kv\_mount)
 
-Description: (Optional) Vault KVv2 mount path where the generated bootstrap PFX password is stored
+Description: (Optional) Vault KVv2 mount path where the generated bootstrap PFX password is stored.
 
 Type: `string`
 
-Default: `"kvv2"`
+Default: `"kvv2_azure_devops"`
 
 ### <a name="input_bootstrap_pfx_password_kv_path"></a> [bootstrap\_pfx\_password\_kv\_path](#input\_bootstrap\_pfx\_password\_kv\_path)
 
-Description: (Optional) Vault KVv2 secret path where the generated bootstrap PFX password is stored
+Description: (Optional) Vault KVv2 secret path where the generated bootstrap PFX password is stored.
 
 Type: `string`
 
@@ -233,7 +233,7 @@ Default: `"azure-vaultpki-renewal/bootstrap"`
 
 ### <a name="input_enable_azure_devops_jwt_auth"></a> [enable\_azure\_devops\_jwt\_auth](#input\_enable\_azure\_devops\_jwt\_auth)
 
-Description: (Optional) When true, creates the Vault JWT role and policy for Azure DevOps pipeline authentication
+Description: (Optional) When true, creates the Vault JWT role and policy for Azure DevOps pipeline authentication.
 
 Type: `bool`
 
@@ -241,7 +241,7 @@ Default: `true`
 
 ### <a name="input_initial_certificate_common_name"></a> [initial\_certificate\_common\_name](#input\_initial\_certificate\_common\_name)
 
-Description: (Optional) Common Name requested from Vault PKI for the initial bootstrap certificate
+Description: (Optional) Common Name requested from Vault PKI for the initial bootstrap certificate.
 
 Type: `string`
 
@@ -249,7 +249,7 @@ Default: `"appgw.demo.example.com"`
 
 ### <a name="input_initial_certificate_ttl"></a> [initial\_certificate\_ttl](#input\_initial\_certificate\_ttl)
 
-Description: (Optional) TTL sent to Vault PKI for the initial bootstrap certificate
+Description: (Optional) TTL sent to Vault PKI for the initial bootstrap certificate.
 
 Type: `string`
 
@@ -257,15 +257,15 @@ Default: `"24h"`
 
 ### <a name="input_key_vault_certificate_name"></a> [key\_vault\_certificate\_name](#input\_key\_vault\_certificate\_name)
 
-Description: (Optional) Certificate name created in Key Vault and referenced by Application Gateway
+Description: (Optional) Certificate name created in Key Vault and referenced by Application Gateway.
 
 Type: `string`
 
-Default: `"demo-tls-cert"`
+Default: `"gw-demo-tls-cert"`
 
 ### <a name="input_location"></a> [location](#input\_location)
 
-Description: (Optional) Azure region where the demo resources are deployed
+Description: (Optional) Azure region where the demo resources are deployed.
 
 Type: `string`
 
@@ -273,7 +273,7 @@ Default: `"canadacentral"`
 
 ### <a name="input_name_prefix"></a> [name\_prefix](#input\_name\_prefix)
 
-Description: (Optional) Prefix used for Azure resource naming
+Description: (Optional) Prefix used for Azure resource naming.
 
 Type: `string`
 
@@ -281,7 +281,7 @@ Default: `"vault-pki"`
 
 ### <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name)
 
-Description: (Optional) Resource group name for all demo resources
+Description: (Optional) Resource group name for all demo resources.
 
 Type: `string`
 
@@ -289,7 +289,7 @@ Default: `"rg-vault-pki-renewal"`
 
 ### <a name="input_tags"></a> [tags](#input\_tags)
 
-Description: (Optional) Tags applied to Azure resources
+Description: (Optional) Tags applied to Azure resources.
 
 Type: `map(string)`
 
@@ -297,7 +297,7 @@ Default: `{}`
 
 ### <a name="input_vault_addr"></a> [vault\_addr](#input\_vault\_addr)
 
-Description: (Required) Vault address used for initial certificate issuance
+Description: (Required) Vault address used for initial certificate issuance.
 
 Type: `string`
 
@@ -305,7 +305,7 @@ Default: `""`
 
 ### <a name="input_vault_namespace"></a> [vault\_namespace](#input\_vault\_namespace)
 
-Description: (Optional) Vault namespace used for initial certificate issuance
+Description: (Optional) Vault namespace used for initial certificate issuance.
 
 Type: `string`
 
@@ -313,7 +313,7 @@ Default: `""`
 
 ### <a name="input_vault_pki_path"></a> [vault\_pki\_path](#input\_vault\_pki\_path)
 
-Description: (Optional) Vault PKI mount path used for certificate issuance
+Description: (Optional) Vault PKI mount path used for certificate issuance.
 
 Type: `string`
 
@@ -321,7 +321,7 @@ Default: `"pki-int"`
 
 ### <a name="input_vault_pki_role"></a> [vault\_pki\_role](#input\_vault\_pki\_role)
 
-Description: (Optional) Vault PKI role used for certificate issuance
+Description: (Optional) Vault PKI role used for certificate issuance.
 
 Type: `string`
 
@@ -337,7 +337,7 @@ Default: `""`
 
 ### <a name="input_vnet_address_space"></a> [vnet\_address\_space](#input\_vnet\_address\_space)
 
-Description: (Optional) Address space assigned to the demo virtual network
+Description: (Optional) Address space assigned to the demo virtual network.
 
 Type: `list(string)`
 

@@ -7,7 +7,7 @@ locals {
   create_azure_devops_pipeline = trimspace(var.azure_devops_project_name) != "" && (
     (var.azure_devops_repository_type == "TfsGit" && trimspace(var.azure_devops_repository_name) != "") ||
     (var.azure_devops_repository_type != "TfsGit" && trimspace(var.azure_devops_repository_id) != "")
-  )
+  ) && trimspace(var.azure_devops_azure_service_connection_name) != ""
   azure_devops_pipeline_branch_name = trimspace(var.azure_devops_pipeline_branch_name) != "" ? var.azure_devops_pipeline_branch_name : (
     var.azure_devops_repository_type == "TfsGit" ? try(data.azuredevops_git_repository.pipeline_repository[0].default_branch, "refs/heads/main") : "main"
   )
@@ -335,7 +335,7 @@ resource "azurerm_automation_job_schedule" "certificate_renewal" {
 resource "vault_policy" "workload_pki_issue" {
   count = local.create_vault_jwt_auth ? 1 : 0
 
-  name = "${local.name_prefix}-workload-pki-issue"
+  name = "${local.name_prefix}-azure-devops-pki-issue"
 
   policy = <<EOT
 path "${var.vault_pki_path}/issue/${var.vault_pki_role}" {
@@ -381,6 +381,14 @@ moved {
 moved {
   from = vault_jwt_auth_backend_role.azure_devops
   to   = vault_jwt_auth_backend_role.workload
+}
+
+removed {
+  from = local_file.azure_pipelines_yaml
+
+  lifecycle {
+    destroy = false
+  }
 }
 
 resource "random_password" "bootstrap_pfx_password" {

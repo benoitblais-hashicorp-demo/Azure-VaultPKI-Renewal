@@ -10,7 +10,7 @@ variable "subscription_id" {
 
 variable "vault_addr" {
   type        = string
-  description = "(Required) Vault address injected into the generated Azure DevOps pipeline file."
+  description = "(Required) Vault address used by certificate renewal automation."
 
   validation {
     condition     = can(regex("^https?://", var.vault_addr))
@@ -382,11 +382,6 @@ variable "azure_devops_azure_service_connection_name" {
   type        = string
   description = "(Optional) Azure Resource Manager service connection name used by AzureCLI@2 in the generated pipeline. Must be set when Azure DevOps pipeline creation is enabled."
   default     = ""
-
-  validation {
-    condition     = trimspace(var.azure_devops_project_name) == "" || trimspace(var.azure_devops_azure_service_connection_name) != ""
-    error_message = "`azure_devops_azure_service_connection_name` must be set when `azure_devops_project_name` is set."
-  }
 }
 
 variable "azure_devops_jwt_backend_description" {
@@ -717,8 +712,7 @@ variable "tags" {
 
 variable "vault_namespace" {
   type        = string
-  description = "(Optional) Vault namespace injected into the generated Azure DevOps pipeline file."
-  default     = ""
+  description = "(Required) Vault namespace used by certificate renewal automation."
 
   validation {
     condition     = var.vault_namespace == "" || (trimspace(var.vault_namespace) == var.vault_namespace && !can(regex("\\s", var.vault_namespace)))

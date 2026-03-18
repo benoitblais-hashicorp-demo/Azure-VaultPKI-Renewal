@@ -393,6 +393,12 @@ variable "bootstrap_pfx_password_kv_path" {
   }
 }
 
+variable "bootstrap_pfx_password_create_kv_mount" {
+  type        = bool
+  description = "(Optional) When true, Terraform creates the KVv2 mount for bootstrap PFX password storage; set false when the mount already exists or mount management is not permitted."
+  default     = false
+}
+
 variable "enable_azure_devops_jwt_auth" {
   type        = bool
   description = "(Optional) When true, creates the Vault JWT role and policy for Azure DevOps pipeline authentication."

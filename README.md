@@ -5,8 +5,8 @@ This Terraform project provisions Azure infrastructure to demonstrate automatic 
 
 ## What This Demo Demonstrates
 
-- A scheduled Azure DevOps pipeline requests a renewed certificate from Vault PKI.
-- The pipeline imports the renewed certificate (PFX) into Azure Key Vault under a stable certificate name.
+- A scheduled Azure Automation runbook requests a renewed certificate from Vault PKI.
+- The runbook imports the renewed certificate into Azure Key Vault under a stable certificate name.
 - Azure Application Gateway reads TLS material from Azure Key Vault and serves HTTPS.
 - Certificate rotation happens by updating the same Key Vault certificate object used by Application Gateway.
 
@@ -16,8 +16,8 @@ This Terraform project provisions Azure infrastructure to demonstrate automatic 
 - Azure Key Vault storing the TLS certificate
 - Azure Application Gateway (Standard v2) with HTTPS listener
 - User-assigned managed identity for Application Gateway to read Key Vault secrets
-- Azure DevOps pipeline (`azure-pipelines.yml`) for hourly renewal automation
-- Python renewal script (`scripts/renew_certificate.py`) for Vault PKI issue + Key Vault import
+- Azure Automation Account + Python3 runbook for hourly renewal automation
+- Python runbook script (`scripts/automation_runbook.py`) for Vault PKI issue + Key Vault import
 
 ## Permissions
 
@@ -28,7 +28,7 @@ The Azure identity running Terraform needs permission to create and manage:
 - Resource Group, VNet/Subnet, Public IP, Application Gateway, and Managed Identity
 - Azure Key Vault, access policies, and certificates
 
-The Azure DevOps service connection needs permission to:
+The Azure Automation managed identity needs permission to:
 
 - Import certificates to the target Key Vault
 - Read certificate metadata from the target Key Vault
@@ -50,19 +50,21 @@ The automation token is expected to be scoped to:
 ### Azure Authentication
 
 - Terraform authenticates through the AzureRM provider using your standard Azure identity flow.
-- Azure DevOps authenticates with an Azure service connection (`AZURE_SERVICE_CONNECTION`).
+- Azure Automation runbook authenticates with its managed identity.
 
 ### Vault Authentication
 
 Terraform `vault` provider uses dynamic credentials from environment variables (for example HCP Terraform dynamic credentials), not a hardcoded token in code.
 
-The renewal automation authenticates to Vault using environment variables available to the pipeline (for example secure Azure DevOps variables).
+The renewal automation authenticates to Vault using runbook variables and managed identity JWT or a static Vault token.
 
-Required pipeline Vault environment values:
+Required runbook Vault values:
 
 - `VAULT_ADDR`
-- `VAULT_NAMESPACE` (optional)
-- `VAULT_TOKEN`
+- `VAULT_NAMESPACE` (required in this module)
+- `VAULT_TOKEN` (optional)
+- `VAULT_AUTH_PATH` and `VAULT_AUTH_ROLE` (when `VAULT_TOKEN` is not provided)
+- `VAULT_JWT_AUDIENCE` (when `VAULT_TOKEN` is not provided)
 - `VAULT_PKI_PATH`
 - `VAULT_PKI_ROLE`
 
@@ -75,19 +77,18 @@ Required pipeline Vault environment values:
 
 ## How Certificate Renewal Works in this Demo
 
-This demo uses a scheduled pipeline model where Azure DevOps runs every hour, issues a certificate from Vault PKI, converts it to PFX, and imports it back to Azure Key Vault.
+This demo uses a scheduled runbook model where Azure Automation runs every hour, issues a certificate from Vault PKI, and imports it to Azure Key Vault.
 
 ### The Workflow
 
-1. Azure DevOps pipeline runs on schedule (`0 * * * *`) or manual execution.
-2. Pipeline calls Vault PKI issue API with configured role and Common Name.
-3. Script builds a PKCS#12 (PFX) bundle from issued cert and private key.
-4. Script imports the renewed PFX to the same certificate name in Key Vault.
+1. Azure Automation runbook runs on schedule or manual execution.
+2. Runbook calls Vault PKI issue API with configured role and Common Name.
+3. Runbook imports the renewed certificate to the same certificate name in Key Vault.
 5. Application Gateway continues referencing Key Vault certificate and uses renewed material.
 
 ### Run the Demo Immediately (No 1-Hour Wait)
 
-You can run the Azure DevOps pipeline manually from the Azure DevOps UI to force immediate certificate renewal.
+You can run the Azure Automation runbook manually from the Azure Portal to force immediate certificate renewal.
 
 ## Documentation
 
@@ -97,11 +98,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.6.0)
 
-- <a name="requirement_azuredevops"></a> [azuredevops](#requirement\_azuredevops) (~> 1.14.0)
-
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.64.0)
-
-- <a name="requirement_local"></a> [local](#requirement\_local) (~> 2.5)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.7)
 
@@ -123,7 +120,13 @@ Type: `string`
 
 ### <a name="input_vault_addr"></a> [vault\_addr](#input\_vault\_addr)
 
-Description: (Required) Vault address injected into the generated Azure DevOps pipeline file.
+Description: (Required) Vault address used by certificate renewal automation.
+
+Type: `string`
+
+### <a name="input_vault_namespace"></a> [vault\_namespace](#input\_vault\_namespace)
+
+Description: (Required) Vault namespace used by certificate renewal automation.
 
 Type: `string`
 
@@ -321,163 +324,85 @@ Type: `string`
 
 Default: `"10.20.1.0/24"`
 
-### <a name="input_azure_devops_jwt_backend_description"></a> [azure\_devops\_jwt\_backend\_description](#input\_azure\_devops\_jwt\_backend\_description)
+### <a name="input_azure_automation_account_name"></a> [azure\_automation\_account\_name](#input\_azure\_automation\_account\_name)
 
-Description: (Optional) Description for the Azure DevOps JWT/OIDC auth backend in Vault.
-
-Type: `string`
-
-Default: `"JWT/OIDC auth backend for Azure DevOps pipelines"`
-
-### <a name="input_azure_devops_jwt_backend_path"></a> [azure\_devops\_jwt\_backend\_path](#input\_azure\_devops\_jwt\_backend\_path)
-
-Description: (Optional) Path for the Azure DevOps JWT/OIDC auth backend in Vault.
+Description: (Optional) Azure Automation Account name used for runbook-based certificate renewal.
 
 Type: `string`
 
-Default: `"jwt_azure_devops"`
+Default: `"aa-vault-pki-renewal"`
 
-### <a name="input_azure_devops_jwt_bound_audiences"></a> [azure\_devops\_jwt\_bound\_audiences](#input\_azure\_devops\_jwt\_bound\_audiences)
+### <a name="input_azure_automation_runbook_log_verbose"></a> [azure\_automation\_runbook\_log\_verbose](#input\_azure\_automation\_runbook\_log\_verbose)
 
-Description: (Optional) Accepted audience claims for the Azure DevOps OIDC tokens.
+Description: (Optional) When true, enables verbose logging on the Azure Automation runbook.
 
-Type: `list(string)`
+Type: `bool`
 
-Default:
+Default: `true`
 
-```json
-[
-  "vault.workload.identity"
-]
-```
+### <a name="input_azure_automation_runbook_name"></a> [azure\_automation\_runbook\_name](#input\_azure\_automation\_runbook\_name)
 
-### <a name="input_azure_devops_jwt_bound_claims"></a> [azure\_devops\_jwt\_bound\_claims](#input\_azure\_devops\_jwt\_bound\_claims)
-
-Description: (Optional) Additional bound claims for the Azure DevOps JWT role.
-
-Type: `map(string)`
-
-Default: `{}`
-
-### <a name="input_azure_devops_jwt_bound_issuer"></a> [azure\_devops\_jwt\_bound\_issuer](#input\_azure\_devops\_jwt\_bound\_issuer)
-
-Description: (Optional) Expected issuer claim for the Azure DevOps OIDC tokens.
+Description: (Optional) Azure Automation runbook name used for certificate renewal.
 
 Type: `string`
 
-Default: `"https://vstoken.dev.azure.com"`
+Default: `"renew-certificate"`
 
-### <a name="input_azure_devops_jwt_discovery_url"></a> [azure\_devops\_jwt\_discovery\_url](#input\_azure\_devops\_jwt\_discovery\_url)
+### <a name="input_azure_automation_schedule_interval_hours"></a> [azure\_automation\_schedule\_interval\_hours](#input\_azure\_automation\_schedule\_interval\_hours)
 
-Description: (Optional) OIDC discovery URL used by Vault to validate Azure DevOps tokens.
-
-Type: `string`
-
-Default: `"https://vstoken.dev.azure.com"`
-
-### <a name="input_azure_devops_jwt_role_name"></a> [azure\_devops\_jwt\_role\_name](#input\_azure\_devops\_jwt\_role\_name)
-
-Description: (Optional) Vault JWT role name for the Azure DevOps pipeline login.
-
-Type: `string`
-
-Default: `"jwt_azure_devops_role"`
-
-### <a name="input_azure_devops_jwt_token_max_ttl"></a> [azure\_devops\_jwt\_token\_max\_ttl](#input\_azure\_devops\_jwt\_token\_max\_ttl)
-
-Description: (Optional) Maximum lifetime in seconds for Vault tokens issued to Azure DevOps JWT logins.
+Description: (Optional) Hour interval for Azure Automation schedule recurrence.
 
 Type: `number`
 
-Default: `600`
+Default: `1`
 
-### <a name="input_azure_devops_jwt_token_ttl"></a> [azure\_devops\_jwt\_token\_ttl](#input\_azure\_devops\_jwt\_token\_ttl)
+### <a name="input_azure_automation_schedule_name"></a> [azure\_automation\_schedule\_name](#input\_azure\_automation\_schedule\_name)
 
-Description: (Optional) Default lifetime in seconds for Vault tokens issued to Azure DevOps JWT logins.
-
-Type: `number`
-
-Default: `300`
-
-### <a name="input_azure_devops_jwt_user_claim"></a> [azure\_devops\_jwt\_user\_claim](#input\_azure\_devops\_jwt\_user\_claim)
-
-Description: (Optional) JWT claim used as user identity in the Vault Azure DevOps JWT role.
+Description: (Optional) Azure Automation schedule name used for runbook recurrence.
 
 Type: `string`
 
-Default: `"sub"`
+Default: `"hourly-certificate-renewal"`
 
-### <a name="input_azure_devops_pipeline_branch_name"></a> [azure\_devops\_pipeline\_branch\_name](#input\_azure\_devops\_pipeline\_branch\_name)
+### <a name="input_azure_automation_schedule_timezone"></a> [azure\_automation\_schedule\_timezone](#input\_azure\_automation\_schedule\_timezone)
 
-Description: (Optional) Branch used by the Azure DevOps pipeline definition. Leave empty to use the repository default branch for Azure Repos Git or `main` for GitHub.
-
-Type: `string`
-
-Default: `""`
-
-### <a name="input_azure_devops_pipeline_folder"></a> [azure\_devops\_pipeline\_folder](#input\_azure\_devops\_pipeline\_folder)
-
-Description: (Optional) Azure DevOps pipeline folder path. Use `\` for the root folder.
+Description: (Optional) Azure Automation schedule timezone.
 
 Type: `string`
 
-Default: `"\\"`
+Default: `"UTC"`
 
-### <a name="input_azure_devops_pipeline_name"></a> [azure\_devops\_pipeline\_name](#input\_azure\_devops\_pipeline\_name)
+### <a name="input_azure_automation_vault_auth_path"></a> [azure\_automation\_vault\_auth\_path](#input\_azure\_automation\_vault\_auth\_path)
 
-Description: (Optional) Name of the Azure DevOps pipeline created by Terraform.
-
-Type: `string`
-
-Default: `"vault-pki-renewal"`
-
-### <a name="input_azure_devops_pipeline_yaml_path"></a> [azure\_devops\_pipeline\_yaml\_path](#input\_azure\_devops\_pipeline\_yaml\_path)
-
-Description: (Optional) Path to the Azure Pipelines YAML file in the source repository.
-
-Type: `string`
-
-Default: `"azure-pipelines.yml"`
-
-### <a name="input_azure_devops_project_name"></a> [azure\_devops\_project\_name](#input\_azure\_devops\_project\_name)
-
-Description: (Optional) Azure DevOps project name where the pipeline will be created. Leave empty to skip Azure DevOps pipeline creation.
+Description: (Optional) Vault auth path used by the Azure Automation runbook when VAULT\_TOKEN is not supplied.
 
 Type: `string`
 
 Default: `""`
 
-### <a name="input_azure_devops_repository_id"></a> [azure\_devops\_repository\_id](#input\_azure\_devops\_repository\_id)
+### <a name="input_azure_automation_vault_auth_role"></a> [azure\_automation\_vault\_auth\_role](#input\_azure\_automation\_vault\_auth\_role)
 
-Description: (Optional) Repository identifier used by Azure DevOps pipeline creation for external repositories. For GitHub, use `<owner>/<repo>`. Leave empty when `azure_devops_repository_type` is `TfsGit`.
-
-Type: `string`
-
-Default: `""`
-
-### <a name="input_azure_devops_repository_name"></a> [azure\_devops\_repository\_name](#input\_azure\_devops\_repository\_name)
-
-Description: (Optional) Azure Repos Git repository name used when `azure_devops_repository_type` is `TfsGit`.
+Description: (Optional) Vault auth role used by the Azure Automation runbook when VAULT\_TOKEN is not supplied.
 
 Type: `string`
 
 Default: `""`
 
-### <a name="input_azure_devops_repository_service_connection_id"></a> [azure\_devops\_repository\_service\_connection\_id](#input\_azure\_devops\_repository\_service\_connection\_id)
+### <a name="input_azure_automation_vault_jwt_audience"></a> [azure\_automation\_vault\_jwt\_audience](#input\_azure\_automation\_vault\_jwt\_audience)
 
-Description: (Optional) Azure DevOps service connection ID for external repositories such as GitHub. Leave empty for `TfsGit`.
+Description: (Optional) Audience/resource used to request a managed-identity JWT for Vault login when VAULT\_TOKEN and VAULT\_JWT are not supplied.
 
 Type: `string`
 
 Default: `""`
 
-### <a name="input_azure_devops_repository_type"></a> [azure\_devops\_repository\_type](#input\_azure\_devops\_repository\_type)
+### <a name="input_azure_automation_vault_token"></a> [azure\_automation\_vault\_token](#input\_azure\_automation\_vault\_token)
 
-Description: (Optional) Repository type used by the Azure DevOps pipeline definition. Supported values are `GitHub`, `GitHubEnterprise`, and `TfsGit`.
+Description: (Optional) Static Vault token used by Azure Automation runbook. Prefer short-lived tokens and rotate regularly.
 
 Type: `string`
 
-Default: `"GitHub"`
+Default: `""`
 
 ### <a name="input_bootstrap_pfx_password_create_kv_mount"></a> [bootstrap\_pfx\_password\_create\_kv\_mount](#input\_bootstrap\_pfx\_password\_create\_kv\_mount)
 
@@ -493,7 +418,7 @@ Description: (Optional) Vault KVv2 mount path where the generated bootstrap PFX 
 
 Type: `string`
 
-Default: `"kvv2_azure_devops"`
+Default: `"kvv2_vault_pki_renewal"`
 
 ### <a name="input_bootstrap_pfx_password_kv_path"></a> [bootstrap\_pfx\_password\_kv\_path](#input\_bootstrap\_pfx\_password\_kv\_path)
 
@@ -511,9 +436,17 @@ Type: `bool`
 
 Default: `false`
 
-### <a name="input_enable_azure_devops_jwt_auth"></a> [enable\_azure\_devops\_jwt\_auth](#input\_enable\_azure\_devops\_jwt\_auth)
+### <a name="input_enable_azure_automation_runbook"></a> [enable\_azure\_automation\_runbook](#input\_enable\_azure\_automation\_runbook)
 
-Description: (Optional) When true, creates the Vault JWT role and policy for Azure DevOps pipeline authentication.
+Description: (Optional) When true, creates Azure Automation resources to run certificate renewal on an hourly schedule.
+
+Type: `bool`
+
+Default: `false`
+
+### <a name="input_enable_vault_jwt_auth"></a> [enable\_vault\_jwt\_auth](#input\_enable\_vault\_jwt\_auth)
+
+Description: (Optional) When true, creates the Vault JWT auth backend role and policy for workload authentication.
 
 Type: `bool`
 
@@ -575,13 +508,91 @@ Type: `map(string)`
 
 Default: `{}`
 
-### <a name="input_vault_namespace"></a> [vault\_namespace](#input\_vault\_namespace)
+### <a name="input_vault_jwt_backend_description"></a> [vault\_jwt\_backend\_description](#input\_vault\_jwt\_backend\_description)
 
-Description: (Optional) Vault namespace injected into the generated Azure DevOps pipeline file.
+Description: (Optional) Description for the Vault JWT/OIDC auth backend used by renewal workloads.
 
 Type: `string`
 
-Default: `""`
+Default: `"JWT/OIDC auth backend for certificate renewal workloads"`
+
+### <a name="input_vault_jwt_backend_path"></a> [vault\_jwt\_backend\_path](#input\_vault\_jwt\_backend\_path)
+
+Description: (Optional) Path for the Vault JWT/OIDC auth backend.
+
+Type: `string`
+
+Default: `"jwt_workload"`
+
+### <a name="input_vault_jwt_bound_audiences"></a> [vault\_jwt\_bound\_audiences](#input\_vault\_jwt\_bound\_audiences)
+
+Description: (Optional) Accepted audience claims for JWT/OIDC workload tokens.
+
+Type: `list(string)`
+
+Default:
+
+```json
+[
+  "vault.workload.identity"
+]
+```
+
+### <a name="input_vault_jwt_bound_claims"></a> [vault\_jwt\_bound\_claims](#input\_vault\_jwt\_bound\_claims)
+
+Description: (Optional) Additional bound claims for the Vault JWT role.
+
+Type: `map(string)`
+
+Default: `{}`
+
+### <a name="input_vault_jwt_bound_issuer"></a> [vault\_jwt\_bound\_issuer](#input\_vault\_jwt\_bound\_issuer)
+
+Description: (Optional) Expected issuer claim for workload JWT/OIDC tokens.
+
+Type: `string`
+
+Default: `"https://login.microsoftonline.com/<tenant-id>/v2.0"`
+
+### <a name="input_vault_jwt_discovery_url"></a> [vault\_jwt\_discovery\_url](#input\_vault\_jwt\_discovery\_url)
+
+Description: (Optional) OIDC discovery URL used by Vault to validate workload tokens.
+
+Type: `string`
+
+Default: `"https://login.microsoftonline.com/<tenant-id>/v2.0/.well-known/openid-configuration"`
+
+### <a name="input_vault_jwt_role_name"></a> [vault\_jwt\_role\_name](#input\_vault\_jwt\_role\_name)
+
+Description: (Optional) Vault JWT role name used by renewal workloads.
+
+Type: `string`
+
+Default: `"jwt_workload_role"`
+
+### <a name="input_vault_jwt_token_max_ttl"></a> [vault\_jwt\_token\_max\_ttl](#input\_vault\_jwt\_token\_max\_ttl)
+
+Description: (Optional) Maximum lifetime in seconds for Vault tokens issued to workload JWT logins.
+
+Type: `number`
+
+Default: `600`
+
+### <a name="input_vault_jwt_token_ttl"></a> [vault\_jwt\_token\_ttl](#input\_vault\_jwt\_token\_ttl)
+
+Description: (Optional) Default lifetime in seconds for Vault tokens issued to workload JWT logins.
+
+Type: `number`
+
+Default: `300`
+
+### <a name="input_vault_jwt_user_claim"></a> [vault\_jwt\_user\_claim](#input\_vault\_jwt\_user\_claim)
+
+Description: (Optional) JWT claim used as user identity in the Vault JWT role.
+
+Type: `string`
+
+Default: `"sub"`
 
 ### <a name="input_vault_pki_path"></a> [vault\_pki\_path](#input\_vault\_pki\_path)
 
@@ -617,10 +628,27 @@ Default:
 
 The following resources are used by this module:
 
-- [azuredevops_build_definition.certificate_renewal](https://registry.terraform.io/providers/microsoft/azuredevops/latest/docs/resources/build_definition) (resource)
 - [azurerm_application_gateway.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/application_gateway) (resource)
+- [azurerm_automation_account.certificate_renewal](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_account) (resource)
+- [azurerm_automation_job_schedule.certificate_renewal](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_job_schedule) (resource)
+- [azurerm_automation_runbook.certificate_renewal](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_runbook) (resource)
+- [azurerm_automation_schedule.certificate_renewal](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_schedule) (resource)
+- [azurerm_automation_variable_string.cert_common_name](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.cert_ttl](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.key_vault_cert_name](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.key_vault_name](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.pfx_password](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.vault_addr](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.vault_auth_path](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.vault_auth_role](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.vault_jwt_audience](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.vault_namespace](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.vault_pki_path](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.vault_pki_role](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.vault_token](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
 - [azurerm_key_vault.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault) (resource)
 - [azurerm_key_vault_access_policy.app_gateway_identity](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_access_policy) (resource)
+- [azurerm_key_vault_access_policy.automation_identity](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_access_policy) (resource)
 - [azurerm_key_vault_access_policy.terraform_identity](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_access_policy) (resource)
 - [azurerm_key_vault_certificate.bootstrap](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_certificate) (resource)
 - [azurerm_public_ip.app_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
@@ -628,17 +656,14 @@ The following resources are used by this module:
 - [azurerm_subnet.app_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_user_assigned_identity.app_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
 - [azurerm_virtual_network.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
-- [local_file.azure_pipelines_yaml](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) (resource)
 - [random_password.bootstrap_pfx_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) (resource)
-- [vault_jwt_auth_backend.azure_devops](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/jwt_auth_backend) (resource)
-- [vault_jwt_auth_backend_role.azure_devops](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/jwt_auth_backend_role) (resource)
+- [vault_jwt_auth_backend.workload](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/jwt_auth_backend) (resource)
+- [vault_jwt_auth_backend_role.workload](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/jwt_auth_backend_role) (resource)
 - [vault_kv_secret_v2.bootstrap_pfx_password](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/kv_secret_v2) (resource)
 - [vault_mount.bootstrap_pfx_password_kvv2](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/mount) (resource)
 - [vault_pki_secret_backend_cert.bootstrap](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/pki_secret_backend_cert) (resource)
 - [vault_pki_secret_backend_role.bootstrap](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/pki_secret_backend_role) (resource)
-- [vault_policy.azure_devops_pki_issue](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/policy) (resource)
-- [azuredevops_git_repository.pipeline_repository](https://registry.terraform.io/providers/microsoft/azuredevops/latest/docs/data-sources/git_repository) (data source)
-- [azuredevops_project.pipeline_project](https://registry.terraform.io/providers/microsoft/azuredevops/latest/docs/data-sources/project) (data source)
+- [vault_policy.workload_pki_issue](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/policy) (resource)
 - [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 
 ## Outputs
@@ -653,13 +678,13 @@ Description: Application Gateway name receiving TLS certificate updates from Key
 
 Description: Public IP address of the Application Gateway
 
-### <a name="output_azure_devops_pipeline_id"></a> [azure\_devops\_pipeline\_id](#output\_azure\_devops\_pipeline\_id)
+### <a name="output_azure_automation_account_name"></a> [azure\_automation\_account\_name](#output\_azure\_automation\_account\_name)
 
-Description: Azure DevOps build definition ID for the certificate renewal pipeline. Null when pipeline creation is not configured.
+Description: Azure Automation Account name for certificate renewal. Null when Azure Automation is disabled.
 
-### <a name="output_azure_devops_pipeline_name"></a> [azure\_devops\_pipeline\_name](#output\_azure\_devops\_pipeline\_name)
+### <a name="output_azure_automation_runbook_name"></a> [azure\_automation\_runbook\_name](#output\_azure\_automation\_runbook\_name)
 
-Description: Azure DevOps pipeline name for the certificate renewal pipeline. Null when pipeline creation is not configured.
+Description: Azure Automation runbook name for certificate renewal. Null when Azure Automation is disabled.
 
 ### <a name="output_key_vault_certificate_name"></a> [key\_vault\_certificate\_name](#output\_key\_vault\_certificate\_name)
 
@@ -673,14 +698,6 @@ Description: Azure Key Vault name storing the TLS certificate
 
 Description: Resource group that contains the demo resources
 
-### <a name="output_vault_azure_devops_jwt_backend_path"></a> [vault\_azure\_devops\_jwt\_backend\_path](#output\_vault\_azure\_devops\_jwt\_backend\_path)
-
-Description: Vault JWT/OIDC auth backend path for Azure DevOps pipeline logins
-
-### <a name="output_vault_azure_devops_jwt_role_name"></a> [vault\_azure\_devops\_jwt\_role\_name](#output\_vault\_azure\_devops\_jwt\_role\_name)
-
-Description: Vault JWT role name for Azure DevOps pipeline logins. Null when disabled.
-
 ### <a name="output_vault_bootstrap_pfx_password_kv_mount"></a> [vault\_bootstrap\_pfx\_password\_kv\_mount](#output\_vault\_bootstrap\_pfx\_password\_kv\_mount)
 
 Description: Vault KVv2 mount used for generated bootstrap PFX password storage
@@ -688,6 +705,14 @@ Description: Vault KVv2 mount used for generated bootstrap PFX password storage
 ### <a name="output_vault_bootstrap_pfx_password_secret_path"></a> [vault\_bootstrap\_pfx\_password\_secret\_path](#output\_vault\_bootstrap\_pfx\_password\_secret\_path)
 
 Description: Vault KVv2 secret path storing generated bootstrap PFX password
+
+### <a name="output_vault_jwt_backend_path"></a> [vault\_jwt\_backend\_path](#output\_vault\_jwt\_backend\_path)
+
+Description: Vault JWT/OIDC auth backend path for workload logins
+
+### <a name="output_vault_jwt_role_name"></a> [vault\_jwt\_role\_name](#output\_vault\_jwt\_role\_name)
+
+Description: Vault JWT role name for workload logins. Null when disabled.
 
 <!-- markdownlint-enable -->
 # External Documentation

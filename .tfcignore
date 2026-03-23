@@ -1,0 +1,3 @@
+# Exclude repo metadata and documentation from VCS-driven runs
+.github/
+docs/

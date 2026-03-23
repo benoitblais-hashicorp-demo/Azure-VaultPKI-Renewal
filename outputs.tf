@@ -10,12 +10,12 @@ output "application_gateway_public_ip" {
 
 output "azure_automation_account_name" {
   description = "Azure Automation Account name for certificate renewal. Null when Azure Automation is disabled."
-  value       = try(azurerm_automation_account.certificate_renewal[0].name, null)
+  value       = azurerm_automation_account.certificate_renewal.name
 }
 
 output "azure_automation_runbook_name" {
   description = "Azure Automation runbook name for certificate renewal. Null when Azure Automation is disabled."
-  value       = try(azurerm_automation_runbook.certificate_renewal[0].name, null)
+  value       = azurerm_automation_runbook.certificate_renewal.name
 }
 
 output "key_vault_certificate_name" {
@@ -33,22 +33,3 @@ output "resource_group_name" {
   value       = azurerm_resource_group.this.name
 }
 
-output "vault_jwt_backend_path" {
-  description = "Vault JWT/OIDC auth backend path for workload logins"
-  value       = var.vault_jwt_backend_path
-}
-
-output "vault_jwt_role_name" {
-  description = "Vault JWT role name for workload logins. Null when disabled."
-  value       = try(vault_jwt_auth_backend_role.workload[0].role_name, null)
-}
-
-output "vault_bootstrap_pfx_password_kv_mount" {
-  description = "Vault KVv2 mount used for generated bootstrap PFX password storage"
-  value       = var.bootstrap_pfx_password_kv_mount
-}
-
-output "vault_bootstrap_pfx_password_secret_path" {
-  description = "Vault KVv2 secret path storing generated bootstrap PFX password"
-  value       = try(vault_kv_secret_v2.bootstrap_pfx_password[0].path, null)
-}

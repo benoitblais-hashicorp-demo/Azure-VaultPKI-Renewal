@@ -55,15 +55,15 @@ The automation token is expected to be scoped to:
 
 Terraform `vault` provider uses dynamic credentials from environment variables (for example HCP Terraform dynamic credentials), not a hardcoded token in code.
 
-The renewal automation authenticates to Vault using runbook variables and managed identity JWT or a static Vault token.
+The renewal automation authenticates to Vault using runbook variables and AppRole.
 
 Required runbook Vault values:
 
 - `VAULT_ADDR`
 - `VAULT_NAMESPACE` (required in this module)
-- `VAULT_TOKEN` (optional)
-- `VAULT_AUTH_PATH` and `VAULT_AUTH_ROLE` (when `VAULT_TOKEN` is not provided)
-- `VAULT_JWT_AUDIENCE` (when `VAULT_TOKEN` is not provided)
+- `VAULT_AUTH_PATH`
+- `VAULT_APPROLE_ROLE_ID`
+- `VAULT_APPROLE_SECRET_ID`
 - `VAULT_PKI_PATH`
 - `VAULT_PKI_ROLE`
 
@@ -88,3 +88,11 @@ This demo uses a scheduled runbook model where Azure Automation runs every hour,
 ### Run the Demo Immediately (No 1-Hour Wait)
 
 You can run the Azure Automation runbook manually from the Azure Portal to force immediate certificate renewal.
+
+## Demo Cleanup Note
+
+Azure Key Vault enforces soft delete with a minimum 7-day retention. This demo sets purge protection to false, so you can delete and then purge the vault to recreate it immediately. Use Azure CLI after destroy:
+
+```bash
+az keyvault purge --name <key-vault-name>
+```

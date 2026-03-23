@@ -442,6 +442,7 @@ resource "azurerm_automation_runbook" "certificate_renewal" {
   log_progress            = true
   log_verbose             = var.azure_automation_runbook_log_verbose
   runbook_type            = "Python"
+  runtime_environment_name = "Python"
   content                 = file("${path.module}/scripts/automation_runbook.py")
 }
 
@@ -609,8 +610,12 @@ resource "azurerm_automation_schedule" "certificate_renewal" {
   frequency               = "Hour"
   interval                = var.azure_automation_schedule_interval_hours
   timezone                = var.azure_automation_schedule_timezone
-  start_time              = var.azure_automation_schedule_start_time
+  start_time              = timeadd(timestamp(), "10m")
   description             = "Hourly certificate renewal runbook schedule"
+
+  lifecycle {
+    ignore_changes = [start_time]
+  }
 }
 
 # Link the runbook to the schedule.

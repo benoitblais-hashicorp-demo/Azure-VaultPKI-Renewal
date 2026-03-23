@@ -56,15 +56,15 @@ The automation token is expected to be scoped to:
 
 Terraform `vault` provider uses dynamic credentials from environment variables (for example HCP Terraform dynamic credentials), not a hardcoded token in code.
 
-The renewal automation authenticates to Vault using runbook variables and managed identity JWT or a static Vault token.
+The renewal automation authenticates to Vault using runbook variables and AppRole.
 
 Required runbook Vault values:
 
 - `VAULT_ADDR`
 - `VAULT_NAMESPACE` (required in this module)
-- `VAULT_TOKEN` (optional)
-- `VAULT_AUTH_PATH` and `VAULT_AUTH_ROLE` (when `VAULT_TOKEN` is not provided)
-- `VAULT_JWT_AUDIENCE` (when `VAULT_TOKEN` is not provided)
+- `VAULT_AUTH_PATH`
+- `VAULT_APPROLE_ROLE_ID`
+- `VAULT_APPROLE_SECRET_ID`
 - `VAULT_PKI_PATH`
 - `VAULT_PKI_ROLE`
 
@@ -90,6 +90,14 @@ This demo uses a scheduled runbook model where Azure Automation runs every hour,
 
 You can run the Azure Automation runbook manually from the Azure Portal to force immediate certificate renewal.
 
+## Demo Cleanup Note
+
+Azure Key Vault enforces soft delete with a minimum 7-day retention. This demo sets purge protection to false, so you can delete and then purge the vault to recreate it immediately. Use Azure CLI after destroy:
+
+```bash
+az keyvault purge --name <key-vault-name>
+```
+
 ## Documentation
 
 ## Requirements
@@ -106,7 +114,19 @@ The following requirements are needed by this module:
 
 ## Modules
 
-No modules.
+The following Modules are called:
+
+### <a name="module_keyvault"></a> [keyvault](#module\_keyvault)
+
+Source: app.terraform.io/benoitblais-hashicorp/keyvault/azurerm
+
+Version: 0.0.1
+
+### <a name="module_storage_account"></a> [storage\_account](#module\_storage\_account)
+
+Source: app.terraform.io/benoitblais-hashicorp/storage-account/azurerm
+
+Version: 0.0.4
 
 ## Required Inputs
 
@@ -316,6 +336,14 @@ Type: `string`
 
 Default: `"tls-from-key-vault"`
 
+### <a name="input_app_gateway_subnet_name"></a> [app\_gateway\_subnet\_name](#input\_app\_gateway\_subnet\_name)
+
+Description: (Optional) Subnet name for the Application Gateway.
+
+Type: `string`
+
+Default: `"app-gateway"`
+
 ### <a name="input_app_gateway_subnet_prefix"></a> [app\_gateway\_subnet\_prefix](#input\_app\_gateway\_subnet\_prefix)
 
 Description: (Optional) CIDR prefix used by the dedicated Application Gateway subnet.
@@ -364,41 +392,25 @@ Type: `string`
 
 Default: `"hourly-certificate-renewal"`
 
+### <a name="input_azure_automation_schedule_start_time"></a> [azure\_automation\_schedule\_start\_time](#input\_azure\_automation\_schedule\_start\_time)
+
+Description: (Optional) RFC3339 UTC start time for the Azure Automation schedule.
+
+Type: `string`
+
+Default: `"2026-03-19T00:37:00Z"`
+
 ### <a name="input_azure_automation_schedule_timezone"></a> [azure\_automation\_schedule\_timezone](#input\_azure\_automation\_schedule\_timezone)
 
 Description: (Optional) Azure Automation schedule timezone.
 
 Type: `string`
 
-Default: `"UTC"`
+Default: `"Etc/UTC"`
 
 ### <a name="input_azure_automation_vault_auth_path"></a> [azure\_automation\_vault\_auth\_path](#input\_azure\_automation\_vault\_auth\_path)
 
-Description: (Optional) Vault auth path used by the Azure Automation runbook when VAULT\_TOKEN is not supplied.
-
-Type: `string`
-
-Default: `""`
-
-### <a name="input_azure_automation_vault_auth_role"></a> [azure\_automation\_vault\_auth\_role](#input\_azure\_automation\_vault\_auth\_role)
-
-Description: (Optional) Vault auth role used by the Azure Automation runbook when VAULT\_TOKEN is not supplied.
-
-Type: `string`
-
-Default: `""`
-
-### <a name="input_azure_automation_vault_jwt_audience"></a> [azure\_automation\_vault\_jwt\_audience](#input\_azure\_automation\_vault\_jwt\_audience)
-
-Description: (Optional) Audience/resource used to request a managed-identity JWT for Vault login when VAULT\_TOKEN and VAULT\_JWT are not supplied.
-
-Type: `string`
-
-Default: `""`
-
-### <a name="input_azure_automation_vault_token"></a> [azure\_automation\_vault\_token](#input\_azure\_automation\_vault\_token)
-
-Description: (Optional) Static Vault token used by Azure Automation runbook. Prefer short-lived tokens and rotate regularly.
+Description: (Optional) Vault auth path used by the Azure Automation runbook.
 
 Type: `string`
 
@@ -411,46 +423,6 @@ Description: (Optional) When true, Terraform creates the KVv2 mount for bootstra
 Type: `bool`
 
 Default: `false`
-
-### <a name="input_bootstrap_pfx_password_kv_mount"></a> [bootstrap\_pfx\_password\_kv\_mount](#input\_bootstrap\_pfx\_password\_kv\_mount)
-
-Description: (Optional) Vault KVv2 mount path where the generated bootstrap PFX password is stored.
-
-Type: `string`
-
-Default: `"kvv2_vault_pki_renewal"`
-
-### <a name="input_bootstrap_pfx_password_kv_path"></a> [bootstrap\_pfx\_password\_kv\_path](#input\_bootstrap\_pfx\_password\_kv\_path)
-
-Description: (Optional) Vault KVv2 secret path where the generated bootstrap PFX password is stored.
-
-Type: `string`
-
-Default: `"azure-vaultpki-renewal/bootstrap"`
-
-### <a name="input_bootstrap_pfx_password_store_in_vault"></a> [bootstrap\_pfx\_password\_store\_in\_vault](#input\_bootstrap\_pfx\_password\_store\_in\_vault)
-
-Description: (Optional) When true, Terraform writes the generated bootstrap PFX password into Vault KVv2. Defaults to false so least-privilege Vault configurations do not require KV write access unless explicitly enabled.
-
-Type: `bool`
-
-Default: `false`
-
-### <a name="input_enable_azure_automation_runbook"></a> [enable\_azure\_automation\_runbook](#input\_enable\_azure\_automation\_runbook)
-
-Description: (Optional) When true, creates Azure Automation resources to run certificate renewal on an hourly schedule.
-
-Type: `bool`
-
-Default: `false`
-
-### <a name="input_enable_vault_jwt_auth"></a> [enable\_vault\_jwt\_auth](#input\_enable\_vault\_jwt\_auth)
-
-Description: (Optional) When true, creates the Vault JWT auth backend role and policy for workload authentication.
-
-Type: `bool`
-
-Default: `true`
 
 ### <a name="input_initial_certificate_common_name"></a> [initial\_certificate\_common\_name](#input\_initial\_certificate\_common\_name)
 
@@ -468,6 +440,14 @@ Type: `string`
 
 Default: `"24h"`
 
+### <a name="input_key_vault_additional_principal_object_ids"></a> [key\_vault\_additional\_principal\_object\_ids](#input\_key\_vault\_additional\_principal\_object\_ids)
+
+Description: (Optional) Additional Azure AD object IDs to grant read access to Key Vault secrets and certificates.
+
+Type: `list(string)`
+
+Default: `[]`
+
 ### <a name="input_key_vault_certificate_name"></a> [key\_vault\_certificate\_name](#input\_key\_vault\_certificate\_name)
 
 Description: (Optional) Certificate name created in Key Vault and referenced by Application Gateway.
@@ -475,6 +455,14 @@ Description: (Optional) Certificate name created in Key Vault and referenced by 
 Type: `string`
 
 Default: `"gw-demo-tls-cert"`
+
+### <a name="input_key_vault_soft_delete_retention_days"></a> [key\_vault\_soft\_delete\_retention\_days](#input\_key\_vault\_soft\_delete\_retention\_days)
+
+Description: (Optional) Soft delete retention (days) for Key Vault. Minimum is 7 in Azure.
+
+Type: `number`
+
+Default: `7`
 
 ### <a name="input_location"></a> [location](#input\_location)
 
@@ -500,6 +488,142 @@ Type: `string`
 
 Default: `"rg-vault-pki-renewal"`
 
+### <a name="input_resource_suffix"></a> [resource\_suffix](#input\_resource\_suffix)
+
+Description: (Optional) Resource name suffix used to build shared resource names.
+
+Type: `string`
+
+Default: `"vault-pki-renewal"`
+
+### <a name="input_storage_account_name"></a> [storage\_account\_name](#input\_storage\_account\_name)
+
+Description: (Optional) Storage account name override. Leave empty to derive from resource group suffix.
+
+Type: `string`
+
+Default: `""`
+
+### <a name="input_storage_allow_nested_items_to_be_public"></a> [storage\_allow\_nested\_items\_to\_be\_public](#input\_storage\_allow\_nested\_items\_to\_be\_public)
+
+Description: (Optional) Allow nested items within the storage account to be public.
+
+Type: `bool`
+
+Default: `true`
+
+### <a name="input_storage_blob_access_tier"></a> [storage\_blob\_access\_tier](#input\_storage\_blob\_access\_tier)
+
+Description: (Optional) Access tier for the package blob.
+
+Type: `string`
+
+Default: `"Hot"`
+
+### <a name="input_storage_blob_change_feed_enabled"></a> [storage\_blob\_change\_feed\_enabled](#input\_storage\_blob\_change\_feed\_enabled)
+
+Description: (Optional) Enable blob change feed on the storage account.
+
+Type: `bool`
+
+Default: `false`
+
+### <a name="input_storage_blob_content_type"></a> [storage\_blob\_content\_type](#input\_storage\_blob\_content\_type)
+
+Description: (Optional) Content type for the package blob.
+
+Type: `string`
+
+Default: `"application/octet-stream"`
+
+### <a name="input_storage_blob_last_access_time_enabled"></a> [storage\_blob\_last\_access\_time\_enabled](#input\_storage\_blob\_last\_access\_time\_enabled)
+
+Description: (Optional) Enable blob last access time tracking.
+
+Type: `bool`
+
+Default: `false`
+
+### <a name="input_storage_blob_name"></a> [storage\_blob\_name](#input\_storage\_blob\_name)
+
+Description: (Optional) Package blob name stored in the container.
+
+Type: `string`
+
+Default: `"cryptography-3.2.1-cp38-cp38-win_amd64.whl"`
+
+### <a name="input_storage_blob_parallelism"></a> [storage\_blob\_parallelism](#input\_storage\_blob\_parallelism)
+
+Description: (Optional) Upload parallelism for the package blob.
+
+Type: `number`
+
+Default: `8`
+
+### <a name="input_storage_blob_source"></a> [storage\_blob\_source](#input\_storage\_blob\_source)
+
+Description: (Optional) Local path to the package blob source file.
+
+Type: `string`
+
+Default: `"./packages/cryptography-3.2.1-cp38-cp38-win_amd64.whl"`
+
+### <a name="input_storage_blob_type"></a> [storage\_blob\_type](#input\_storage\_blob\_type)
+
+Description: (Optional) Storage blob type for the package.
+
+Type: `string`
+
+Default: `"Block"`
+
+### <a name="input_storage_blob_versioning_enabled"></a> [storage\_blob\_versioning\_enabled](#input\_storage\_blob\_versioning\_enabled)
+
+Description: (Optional) Enable blob versioning on the storage account.
+
+Type: `bool`
+
+Default: `false`
+
+### <a name="input_storage_container_access_type"></a> [storage\_container\_access\_type](#input\_storage\_container\_access\_type)
+
+Description: (Optional) Access level for the storage container.
+
+Type: `string`
+
+Default: `"private"`
+
+### <a name="input_storage_container_name"></a> [storage\_container\_name](#input\_storage\_container\_name)
+
+Description: (Optional) Storage container name for the automation package.
+
+Type: `string`
+
+Default: `"python-packages"`
+
+### <a name="input_storage_infrastructure_encryption_enabled"></a> [storage\_infrastructure\_encryption\_enabled](#input\_storage\_infrastructure\_encryption\_enabled)
+
+Description: (Optional) Enable infrastructure encryption for the storage account.
+
+Type: `bool`
+
+Default: `false`
+
+### <a name="input_storage_local_user_enabled"></a> [storage\_local\_user\_enabled](#input\_storage\_local\_user\_enabled)
+
+Description: (Optional) Enable local users for the storage account.
+
+Type: `bool`
+
+Default: `true`
+
+### <a name="input_storage_shared_access_key_enabled"></a> [storage\_shared\_access\_key\_enabled](#input\_storage\_shared\_access\_key\_enabled)
+
+Description: (Optional) Enable shared access key authorization for the storage account.
+
+Type: `bool`
+
+Default: `true`
+
 ### <a name="input_tags"></a> [tags](#input\_tags)
 
 Description: (Optional) Tags applied to Azure resources.
@@ -508,91 +632,29 @@ Type: `map(string)`
 
 Default: `{}`
 
-### <a name="input_vault_jwt_backend_description"></a> [vault\_jwt\_backend\_description](#input\_vault\_jwt\_backend\_description)
+### <a name="input_vault_approle_role_name"></a> [vault\_approle\_role\_name](#input\_vault\_approle\_role\_name)
 
-Description: (Optional) Description for the Vault JWT/OIDC auth backend used by renewal workloads.
-
-Type: `string`
-
-Default: `"JWT/OIDC auth backend for certificate renewal workloads"`
-
-### <a name="input_vault_jwt_backend_path"></a> [vault\_jwt\_backend\_path](#input\_vault\_jwt\_backend\_path)
-
-Description: (Optional) Path for the Vault JWT/OIDC auth backend.
+Description: (Optional) Vault AppRole name used by the automation workload.
 
 Type: `string`
 
-Default: `"jwt_workload"`
+Default: `"pki-renewal-automation"`
 
-### <a name="input_vault_jwt_bound_audiences"></a> [vault\_jwt\_bound\_audiences](#input\_vault\_jwt\_bound\_audiences)
+### <a name="input_vault_approle_token_max_ttl"></a> [vault\_approle\_token\_max\_ttl](#input\_vault\_approle\_token\_max\_ttl)
 
-Description: (Optional) Accepted audience claims for JWT/OIDC workload tokens.
-
-Type: `list(string)`
-
-Default:
-
-```json
-[
-  "vault.workload.identity"
-]
-```
-
-### <a name="input_vault_jwt_bound_claims"></a> [vault\_jwt\_bound\_claims](#input\_vault\_jwt\_bound\_claims)
-
-Description: (Optional) Additional bound claims for the Vault JWT role.
-
-Type: `map(string)`
-
-Default: `{}`
-
-### <a name="input_vault_jwt_bound_issuer"></a> [vault\_jwt\_bound\_issuer](#input\_vault\_jwt\_bound\_issuer)
-
-Description: (Optional) Expected issuer claim for workload JWT/OIDC tokens.
-
-Type: `string`
-
-Default: `"https://login.microsoftonline.com/<tenant-id>/v2.0"`
-
-### <a name="input_vault_jwt_discovery_url"></a> [vault\_jwt\_discovery\_url](#input\_vault\_jwt\_discovery\_url)
-
-Description: (Optional) OIDC discovery URL used by Vault to validate workload tokens.
-
-Type: `string`
-
-Default: `"https://login.microsoftonline.com/<tenant-id>/v2.0/.well-known/openid-configuration"`
-
-### <a name="input_vault_jwt_role_name"></a> [vault\_jwt\_role\_name](#input\_vault\_jwt\_role\_name)
-
-Description: (Optional) Vault JWT role name used by renewal workloads.
-
-Type: `string`
-
-Default: `"jwt_workload_role"`
-
-### <a name="input_vault_jwt_token_max_ttl"></a> [vault\_jwt\_token\_max\_ttl](#input\_vault\_jwt\_token\_max\_ttl)
-
-Description: (Optional) Maximum lifetime in seconds for Vault tokens issued to workload JWT logins.
+Description: (Optional) Vault AppRole token max TTL in seconds.
 
 Type: `number`
 
 Default: `600`
 
-### <a name="input_vault_jwt_token_ttl"></a> [vault\_jwt\_token\_ttl](#input\_vault\_jwt\_token\_ttl)
+### <a name="input_vault_approle_token_ttl"></a> [vault\_approle\_token\_ttl](#input\_vault\_approle\_token\_ttl)
 
-Description: (Optional) Default lifetime in seconds for Vault tokens issued to workload JWT logins.
+Description: (Optional) Vault AppRole token TTL in seconds.
 
 Type: `number`
 
 Default: `300`
-
-### <a name="input_vault_jwt_user_claim"></a> [vault\_jwt\_user\_claim](#input\_vault\_jwt\_user\_claim)
-
-Description: (Optional) JWT claim used as user identity in the Vault JWT role.
-
-Type: `string`
-
-Default: `"sub"`
 
 ### <a name="input_vault_pki_path"></a> [vault\_pki\_path](#input\_vault\_pki\_path)
 
@@ -609,6 +671,22 @@ Description: (Optional) Vault PKI role used for certificate issuance.
 Type: `string`
 
 Default: `"gw-cert-issuer"`
+
+### <a name="input_vault_pki_role_max_ttl"></a> [vault\_pki\_role\_max\_ttl](#input\_vault\_pki\_role\_max\_ttl)
+
+Description: (Optional) Maximum TTL in seconds for certificates issued by the Vault PKI role.
+
+Type: `number`
+
+Default: `86400`
+
+### <a name="input_vault_policy_name"></a> [vault\_policy\_name](#input\_vault\_policy\_name)
+
+Description: (Optional) Vault policy name used for certificate issuance permissions.
+
+Type: `string`
+
+Default: `"vault-pki-renewal"`
 
 ### <a name="input_vnet_address_space"></a> [vnet\_address\_space](#input\_vnet\_address\_space)
 
@@ -631,40 +709,41 @@ The following resources are used by this module:
 - [azurerm_application_gateway.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/application_gateway) (resource)
 - [azurerm_automation_account.certificate_renewal](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_account) (resource)
 - [azurerm_automation_job_schedule.certificate_renewal](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_job_schedule) (resource)
+- [azurerm_automation_python3_package.cryptography](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_python3_package) (resource)
 - [azurerm_automation_runbook.certificate_renewal](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_runbook) (resource)
 - [azurerm_automation_schedule.certificate_renewal](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_schedule) (resource)
+- [azurerm_automation_variable_string.app_gateway_name](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.app_gateway_resource_group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.app_gateway_ssl_cert_name](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
 - [azurerm_automation_variable_string.cert_common_name](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
 - [azurerm_automation_variable_string.cert_ttl](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
 - [azurerm_automation_variable_string.key_vault_cert_name](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
 - [azurerm_automation_variable_string.key_vault_name](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
 - [azurerm_automation_variable_string.pfx_password](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.subscription_id](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
 - [azurerm_automation_variable_string.vault_addr](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.vault_approle_role_id](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.vault_approle_secret_id](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
 - [azurerm_automation_variable_string.vault_auth_path](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
-- [azurerm_automation_variable_string.vault_auth_role](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
-- [azurerm_automation_variable_string.vault_jwt_audience](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
 - [azurerm_automation_variable_string.vault_namespace](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
 - [azurerm_automation_variable_string.vault_pki_path](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
 - [azurerm_automation_variable_string.vault_pki_role](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
-- [azurerm_automation_variable_string.vault_token](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
-- [azurerm_key_vault.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault) (resource)
-- [azurerm_key_vault_access_policy.app_gateway_identity](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_access_policy) (resource)
-- [azurerm_key_vault_access_policy.automation_identity](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_access_policy) (resource)
-- [azurerm_key_vault_access_policy.terraform_identity](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_access_policy) (resource)
+- [azurerm_automation_variable_string.vault_tls_skip_verify](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
 - [azurerm_key_vault_certificate.bootstrap](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_certificate) (resource)
 - [azurerm_public_ip.app_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [azurerm_role_assignment.automation_app_gateway_update](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
 - [azurerm_subnet.app_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_user_assigned_identity.app_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
 - [azurerm_virtual_network.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
 - [random_password.bootstrap_pfx_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) (resource)
-- [vault_jwt_auth_backend.workload](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/jwt_auth_backend) (resource)
-- [vault_jwt_auth_backend_role.workload](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/jwt_auth_backend_role) (resource)
-- [vault_kv_secret_v2.bootstrap_pfx_password](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/kv_secret_v2) (resource)
-- [vault_mount.bootstrap_pfx_password_kvv2](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/mount) (resource)
-- [vault_pki_secret_backend_cert.bootstrap](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/pki_secret_backend_cert) (resource)
+- [vault_approle_auth_backend_role.workload](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/approle_auth_backend_role) (resource)
+- [vault_approle_auth_backend_role_secret_id.workload](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/approle_auth_backend_role_secret_id) (resource)
+- [vault_auth_backend.approle](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/auth_backend) (resource)
 - [vault_pki_secret_backend_role.bootstrap](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/pki_secret_backend_role) (resource)
 - [vault_policy.workload_pki_issue](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/policy) (resource)
 - [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
+- [azurerm_storage_account_sas.automation_packages](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/storage_account_sas) (data source)
 
 ## Outputs
 
@@ -697,22 +776,6 @@ Description: Azure Key Vault name storing the TLS certificate
 ### <a name="output_resource_group_name"></a> [resource\_group\_name](#output\_resource\_group\_name)
 
 Description: Resource group that contains the demo resources
-
-### <a name="output_vault_bootstrap_pfx_password_kv_mount"></a> [vault\_bootstrap\_pfx\_password\_kv\_mount](#output\_vault\_bootstrap\_pfx\_password\_kv\_mount)
-
-Description: Vault KVv2 mount used for generated bootstrap PFX password storage
-
-### <a name="output_vault_bootstrap_pfx_password_secret_path"></a> [vault\_bootstrap\_pfx\_password\_secret\_path](#output\_vault\_bootstrap\_pfx\_password\_secret\_path)
-
-Description: Vault KVv2 secret path storing generated bootstrap PFX password
-
-### <a name="output_vault_jwt_backend_path"></a> [vault\_jwt\_backend\_path](#output\_vault\_jwt\_backend\_path)
-
-Description: Vault JWT/OIDC auth backend path for workload logins
-
-### <a name="output_vault_jwt_role_name"></a> [vault\_jwt\_role\_name](#output\_vault\_jwt\_role\_name)
-
-Description: Vault JWT role name for workload logins. Null when disabled.
 
 <!-- markdownlint-enable -->
 # External Documentation

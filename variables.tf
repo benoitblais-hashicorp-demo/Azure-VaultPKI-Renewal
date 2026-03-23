@@ -430,17 +430,6 @@ variable "location" {
   }
 }
 
-variable "name_prefix" {
-  type        = string
-  description = "(Optional) Prefix used for Azure resource naming."
-  default     = "vault-pki"
-
-  validation {
-    condition     = trimspace(var.name_prefix) != ""
-    error_message = "`name_prefix` must not be empty."
-  }
-}
-
 variable "resource_suffix" {
   type        = string
   description = "(Optional) Resource name suffix used to build shared resource names."

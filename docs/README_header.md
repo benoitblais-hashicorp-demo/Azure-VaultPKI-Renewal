@@ -127,6 +127,39 @@ This Terraform project provisions a focused Azure stack that renews a TLS certif
 3. The runbook imports the new certificate into Key Vault under a stable name.
 4. Application Gateway continues to reference the Key Vault certificate and serves HTTPS.
 
+# Azure Vault PKI Renewal Demo
+
+This Terraform project provisions a focused Azure stack that renews a TLS certificate every hour using Vault PKI, imports it into Azure Key Vault, and serves it through Azure Application Gateway.
+
+## What This Demo Demonstrates
+
+- Automated hourly certificate rotation using Vault PKI and Azure Automation.
+- Stable Key Vault certificate name used by Application Gateway for zero-touch rotation.
+- End-to-end integration between Vault, Key Vault, and Application Gateway.
+- Minimal, repeatable infrastructure built for a demo lifecycle.
+
+## Key Integration Points
+
+- Vault PKI issue API to Azure Automation runbook.
+- Runbook imports a new PFX into the same Key Vault certificate object.
+- Application Gateway references Key Vault and picks up the refreshed material.
+
+## Demo Components
+
+- Azure Resource Group, Virtual Network, and dedicated Application Gateway subnet.
+- Azure Key Vault holding the TLS certificate.
+- Azure Application Gateway (Standard v2) with HTTPS listener.
+- User-assigned managed identity for Application Gateway to read Key Vault secrets.
+- Azure Automation Account, schedule, and Python runbook for renewal.
+- Runbook script at `scripts/automation_runbook.py`.
+
+## How This Demo Works
+
+1. Terraform provisions Azure resources plus Vault policy and AppRole wiring.
+2. The runbook runs hourly and requests a certificate from Vault PKI.
+3. The runbook imports the new certificate into Key Vault under a stable name.
+4. Application Gateway continues to reference the Key Vault certificate and serves HTTPS.
+
 ### Run Once Immediately (No 1-Hour Wait)
 
 Trigger the Azure Automation runbook manually once so the initial bootstrap certificate is imported immediately.
@@ -154,8 +187,8 @@ The Terraform identity needs the following roles:
 
 The Azure Automation managed identity needs data-plane access to Key Vault. If you use Key Vault RBAC, grant:
 
-- `Key Vault Certificates Officer` (import/update certificates).
-- `Key Vault Secrets User` (read certificate secrets for import/validation).
+- `Key Vault Certificates Officer` (import and update certificates).
+- `Key Vault Secrets User` (read certificate secrets for import and validation).
 
 ### Vault
 
@@ -171,7 +204,7 @@ The Vault identity used by Terraform needs a policy that allows:
 
 ### Azure Authentication
 
-Use one of the following methods (same pattern as the Azure Storage Account module):
+Use one of the following methods:
 
 Service Principal and Client Secret
 
@@ -226,6 +259,14 @@ Runbook authentication (AppRole):
 - `VAULT_PKI_PATH`
 - `VAULT_PKI_ROLE`
 
+## Demo Cleanup Note
+
+Azure Key Vault enforces soft delete with a minimum 7-day retention. This demo sets purge protection to false, so you can delete and then purge the vault to recreate it immediately. Use Azure CLI after destroy:
+
+```bash
+az keyvault purge --name <key-vault-name>
+az keyvault purge --name kv-vault-pki-renewal
+```
 ## Demo Cleanup Note
 
 Azure Key Vault enforces soft delete with a minimum 7-day retention. This demo sets purge protection to false, so you can delete and then purge the vault to recreate it immediately. Use Azure CLI after destroy:

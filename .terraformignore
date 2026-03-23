@@ -1,3 +1,0 @@
-# Exclude repo metadata and documentation from Terraform upload
-.github/
-docs/

@@ -8,14 +8,14 @@ output "application_gateway_public_ip" {
   value       = azurerm_public_ip.app_gateway.ip_address
 }
 
-output "azure_devops_pipeline_id" {
-  description = "Azure DevOps build definition ID for the certificate renewal pipeline. Null when pipeline creation is not configured."
-  value       = try(azuredevops_build_definition.certificate_renewal[0].id, null)
+output "azure_automation_account_name" {
+  description = "Azure Automation Account name for certificate renewal. Null when Azure Automation is disabled."
+  value       = azurerm_automation_account.certificate_renewal.name
 }
 
-output "azure_devops_pipeline_name" {
-  description = "Azure DevOps pipeline name for the certificate renewal pipeline. Null when pipeline creation is not configured."
-  value       = try(azuredevops_build_definition.certificate_renewal[0].name, null)
+output "azure_automation_runbook_name" {
+  description = "Azure Automation runbook name for certificate renewal. Null when Azure Automation is disabled."
+  value       = azurerm_automation_runbook.certificate_renewal.name
 }
 
 output "key_vault_certificate_name" {
@@ -25,7 +25,7 @@ output "key_vault_certificate_name" {
 
 output "key_vault_name" {
   description = "Azure Key Vault name storing the TLS certificate"
-  value       = azurerm_key_vault.this.name
+  value       = module.keyvault.keyvault.name
 }
 
 output "resource_group_name" {
@@ -33,22 +33,3 @@ output "resource_group_name" {
   value       = azurerm_resource_group.this.name
 }
 
-output "vault_azure_devops_jwt_backend_path" {
-  description = "Vault JWT/OIDC auth backend path for Azure DevOps pipeline logins"
-  value       = var.azure_devops_jwt_backend_path
-}
-
-output "vault_azure_devops_jwt_role_name" {
-  description = "Vault JWT role name for Azure DevOps pipeline logins. Null when disabled."
-  value       = try(vault_jwt_auth_backend_role.azure_devops[0].role_name, null)
-}
-
-output "vault_bootstrap_pfx_password_kv_mount" {
-  description = "Vault KVv2 mount used for generated bootstrap PFX password storage"
-  value       = var.bootstrap_pfx_password_kv_mount
-}
-
-output "vault_bootstrap_pfx_password_secret_path" {
-  description = "Vault KVv2 secret path storing generated bootstrap PFX password"
-  value       = try(vault_kv_secret_v2.bootstrap_pfx_password[0].path, null)
-}

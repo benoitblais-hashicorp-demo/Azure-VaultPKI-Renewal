@@ -41,7 +41,11 @@ export TFC_AGENT_VERSION="1.19.0"
 ## 2) Select Subscription and Create Base Resources
 
 ```bash
-az account set --subscription "$SUBSCRIPTION_ID"
+az account set --subscription $SUBSCRIPTION_ID
+
+# Register required resource providers (one-time per subscription).
+az provider register --namespace Microsoft.Automation --subscription "$SUBSCRIPTION_ID"
+az provider register --namespace Microsoft.KeyVault --subscription "$SUBSCRIPTION_ID"
 
 az group create \
   --name "$RG_NAME" \
@@ -64,7 +68,11 @@ export TENANT_ID=$(az account show --query tenantId -o tsv)
 
 ## 4) Assign Azure RBAC to the Managed Identity
 
-For broad testing, assign `Contributor` at subscription scope:
+To allow Terraform to create role assignments (for example, granting the Automation account access to the App Gateway), the identity
+running Terraform must have either `Owner` or `User Access Administrator` at the target scope. `Contributor` alone is not enough for
+role assignment writes.
+
+For broad testing, assign `Contributor` plus `User Access Administrator`:
 
 ```bash
 az role assignment create \
@@ -72,6 +80,12 @@ az role assignment create \
   --assignee-principal-type ServicePrincipal \
   --role "Contributor" \
   --scope "/subscriptions/$SUBSCRIPTION_ID"
+
+az role assignment create \
+  --assignee-object-id "$UAMI_PRINCIPAL_ID" \
+  --assignee-principal-type ServicePrincipal \
+  --role "User Access Administrator" \
+  --scope "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RG_NAME"
 ```
 
 ## 5) Create Linux VM and Attach UAMI
@@ -203,6 +217,20 @@ sudo systemctl status tfc-agent --no-pager
 EOF
 ```
 
+### 6a) Disable Agent Auto-Update (Optional)
+
+Check supported update behavior values on the VM, then set one of those values in the agent environment file.
+
+```bash
+ssh -t "$ADMIN_USER@$VM_PUBLIC_IP" "sudo /usr/local/bin/tfc-agent -h"
+```
+
+Then update the config (replace `<AUTO_UPDATE>` with a supported value like `disabled`, `patch`, or `minor`):
+
+```bash
+ssh -t "$ADMIN_USER@$VM_PUBLIC_IP" "sudo sed -i '/TFC_AGENT_AUTO_UPDATE/d' /etc/tfc-agent.d/agent.env && echo 'TFC_AGENT_AUTO_UPDATE=<AUTO_UPDATE>' | sudo tee -a /etc/tfc-agent.d/agent.env >/dev/null && sudo systemctl restart tfc-agent"
+```
+
 ## 7) Configure HCP Terraform Workspace
 
 In HCP Terraform workspace settings:
@@ -229,4 +257,55 @@ ARM_ENVIRONMENT=public
 
 ```bash
 ssh "$ADMIN_USER@$VM_PUBLIC_IP" "sudo journalctl -u tfc-agent -n 200 --no-pager"
+```
+
+### Agent Health Checks
+
+```bash
+ssh -t "$ADMIN_USER@$VM_PUBLIC_IP" "sudo systemctl status tfc-agent --no-pager"
+ssh -t "$ADMIN_USER@$VM_PUBLIC_IP" "sudo systemctl show tfc-agent -p User -p Group -p ExecStart"
+```
+
+Tail logs live:
+
+```bash
+ssh -t "$ADMIN_USER@$VM_PUBLIC_IP" "sudo journalctl -u tfc-agent -f --no-pager"
+```
+
+### Prevent Run Directory Permission Errors (Optional)
+
+If you see teardown warnings about failing to remove files under the run directory, install a small systemd path/service to keep
+permissions writable.
+
+```bash
+ssh -t "$ADMIN_USER@$VM_PUBLIC_IP" "sudo tee /usr/local/bin/tfc-agent-fix-perms.sh >/dev/null <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+chmod -R u+rwx /opt/tfc-agent/.tfc-agent/component/terraform/runs || true
+EOF
+sudo chmod +x /usr/local/bin/tfc-agent-fix-perms.sh
+
+sudo tee /etc/systemd/system/tfc-agent-fix-perms.service >/dev/null <<'EOF'
+[Unit]
+Description=Fix tfc-agent run dir permissions
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/tfc-agent-fix-perms.sh
+EOF
+
+sudo tee /etc/systemd/system/tfc-agent-fix-perms.path >/dev/null <<'EOF'
+[Unit]
+Description=Watch for tfc-agent run dirs
+
+[Path]
+PathChanged=/opt/tfc-agent/.tfc-agent/component/terraform/runs
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now tfc-agent-fix-perms.path
+"
 ```

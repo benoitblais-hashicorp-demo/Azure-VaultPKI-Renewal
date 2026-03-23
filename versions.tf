@@ -1,18 +1,19 @@
 terraform {
+  backend "remote" {
+    hostname     = "app.terraform.io"
+    organization = "benoitblais-hashicorp"
+
+    workspaces {
+      name = "azure-vaultpki-renewal"
+    }
+  }
+
   required_version = ">= 1.6.0"
 
   required_providers {
-    azuredevops = {
-      source  = "microsoft/azuredevops"
-      version = "~> 1.14.0"
-    }
     azurerm = {
       source  = "hashicorp/azurerm"
       version = "~> 4.64.0"
-    }
-    local = {
-      source  = "hashicorp/local"
-      version = "~> 2.5"
     }
     random = {
       source  = "hashicorp/random"

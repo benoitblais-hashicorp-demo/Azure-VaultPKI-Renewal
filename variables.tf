@@ -10,7 +10,7 @@ variable "subscription_id" {
 
 variable "vault_addr" {
   type        = string
-  description = "(Required) Vault address injected into the generated Azure DevOps pipeline file."
+  description = "(Required) Vault address used by certificate renewal automation."
 
   validation {
     condition     = can(regex("^https?://", var.vault_addr))
@@ -260,6 +260,17 @@ variable "app_gateway_ssl_certificate_name" {
   }
 }
 
+variable "app_gateway_subnet_name" {
+  type        = string
+  description = "(Optional) Subnet name for the Application Gateway."
+  default     = "app-gateway"
+
+  validation {
+    condition     = trimspace(var.app_gateway_subnet_name) != ""
+    error_message = "`app_gateway_subnet_name` must not be empty."
+  }
+}
+
 variable "app_gateway_subnet_prefix" {
   type        = string
   description = "(Optional) CIDR prefix used by the dedicated Application Gateway subnet."
@@ -271,214 +282,86 @@ variable "app_gateway_subnet_prefix" {
   }
 }
 
-variable "azure_devops_jwt_backend_description" {
+variable "azure_automation_account_name" {
   type        = string
-  description = "(Optional) Description for the Azure DevOps JWT/OIDC auth backend in Vault."
-  default     = "JWT/OIDC auth backend for Azure DevOps pipelines"
+  description = "(Optional) Azure Automation Account name used for runbook-based certificate renewal."
+  default     = "aa-vault-pki-renewal"
 
   validation {
-    condition     = trimspace(var.azure_devops_jwt_backend_description) != ""
-    error_message = "`azure_devops_jwt_backend_description` must not be empty."
+    condition     = can(regex("^[A-Za-z][A-Za-z0-9-]{4,49}$", var.azure_automation_account_name))
+    error_message = "`azure_automation_account_name` must be 5-50 characters, start with a letter, and contain only letters, numbers, and hyphens."
   }
 }
 
-variable "azure_devops_jwt_backend_path" {
+variable "azure_automation_runbook_log_verbose" {
+  type        = bool
+  description = "(Optional) When true, enables verbose logging on the Azure Automation runbook."
+  default     = true
+}
+
+variable "azure_automation_runbook_name" {
   type        = string
-  description = "(Optional) Path for the Azure DevOps JWT/OIDC auth backend in Vault."
-  default     = "jwt_azure_devops"
+  description = "(Optional) Azure Automation runbook name used for certificate renewal."
+  default     = "renew-certificate"
 
   validation {
-    condition     = trimspace(var.azure_devops_jwt_backend_path) != ""
-    error_message = "`azure_devops_jwt_backend_path` must not be empty."
+    condition     = trimspace(var.azure_automation_runbook_name) != ""
+    error_message = "`azure_automation_runbook_name` must not be empty."
   }
 }
 
-variable "azure_devops_jwt_bound_audiences" {
-  type        = list(string)
-  description = "(Optional) Accepted audience claims for the Azure DevOps OIDC tokens."
-  default     = ["vault.workload.identity"]
-
-  validation {
-    condition     = length(var.azure_devops_jwt_bound_audiences) > 0 && alltrue([for audience in var.azure_devops_jwt_bound_audiences : trimspace(audience) != ""])
-    error_message = "`azure_devops_jwt_bound_audiences` must contain at least one non-empty audience value."
-  }
-}
-
-variable "azure_devops_jwt_bound_claims" {
-  type        = map(string)
-  description = "(Optional) Additional bound claims for the Azure DevOps JWT role."
-  default     = {}
-
-  validation {
-    condition     = alltrue([for claim_key, claim_value in var.azure_devops_jwt_bound_claims : trimspace(claim_key) != "" && trimspace(claim_value) != ""])
-    error_message = "`azure_devops_jwt_bound_claims` must contain only non-empty keys and values."
-  }
-}
-
-variable "azure_devops_jwt_bound_issuer" {
-  type        = string
-  description = "(Optional) Expected issuer claim for the Azure DevOps OIDC tokens."
-  default     = "https://vstoken.dev.azure.com"
-
-  validation {
-    condition     = can(regex("^https?://", var.azure_devops_jwt_bound_issuer))
-    error_message = "`azure_devops_jwt_bound_issuer` must start with http:// or https://."
-  }
-}
-
-variable "azure_devops_jwt_discovery_url" {
-  type        = string
-  description = "(Optional) OIDC discovery URL used by Vault to validate Azure DevOps tokens."
-  default     = "https://vstoken.dev.azure.com"
-
-  validation {
-    condition     = can(regex("^https?://", var.azure_devops_jwt_discovery_url))
-    error_message = "`azure_devops_jwt_discovery_url` must start with http:// or https://."
-  }
-}
-
-variable "azure_devops_jwt_role_name" {
-  type        = string
-  description = "(Optional) Vault JWT role name for the Azure DevOps pipeline login."
-  default     = "jwt_azure_devops_role"
-
-  validation {
-    condition     = trimspace(var.azure_devops_jwt_role_name) != ""
-    error_message = "`azure_devops_jwt_role_name` must not be empty."
-  }
-}
-
-variable "azure_devops_jwt_token_max_ttl" {
+variable "azure_automation_schedule_interval_hours" {
   type        = number
-  description = "(Optional) Maximum lifetime in seconds for Vault tokens issued to Azure DevOps JWT logins."
-  default     = 600
+  description = "(Optional) Hour interval for Azure Automation schedule recurrence."
+  default     = 1
 
   validation {
-    condition     = var.azure_devops_jwt_token_max_ttl > 0
-    error_message = "`azure_devops_jwt_token_max_ttl` must be greater than 0."
+    condition     = var.azure_automation_schedule_interval_hours >= 1 && var.azure_automation_schedule_interval_hours <= 24
+    error_message = "`azure_automation_schedule_interval_hours` must be between 1 and 24."
   }
 }
 
-variable "azure_devops_jwt_token_ttl" {
-  type        = number
-  description = "(Optional) Default lifetime in seconds for Vault tokens issued to Azure DevOps JWT logins."
-  default     = 300
-
-  validation {
-    condition     = var.azure_devops_jwt_token_ttl > 0
-    error_message = "`azure_devops_jwt_token_ttl` must be greater than 0."
-  }
-}
-
-variable "azure_devops_jwt_user_claim" {
+variable "azure_automation_schedule_name" {
   type        = string
-  description = "(Optional) JWT claim used as user identity in the Vault Azure DevOps JWT role."
-  default     = "sub"
+  description = "(Optional) Azure Automation schedule name used for runbook recurrence."
+  default     = "hourly-certificate-renewal"
 
   validation {
-    condition     = trimspace(var.azure_devops_jwt_user_claim) != ""
-    error_message = "`azure_devops_jwt_user_claim` must not be empty."
+    condition     = trimspace(var.azure_automation_schedule_name) != ""
+    error_message = "`azure_automation_schedule_name` must not be empty."
   }
 }
 
-variable "azure_devops_pipeline_branch_name" {
+variable "azure_automation_schedule_timezone" {
   type        = string
-  description = "(Optional) Branch used by the Azure DevOps pipeline definition. Leave empty to use the repository default branch for Azure Repos Git or `main` for GitHub."
+  description = "(Optional) Azure Automation schedule timezone."
+  default     = "Etc/UTC"
+
+  validation {
+    condition     = trimspace(var.azure_automation_schedule_timezone) != ""
+    error_message = "`azure_automation_schedule_timezone` must not be empty."
+  }
+}
+
+variable "azure_automation_schedule_start_time" {
+  type        = string
+  description = "(Optional) RFC3339 UTC start time for the Azure Automation schedule."
+  default     = "2026-03-19T00:37:00Z"
+
+  validation {
+    condition     = can(regex("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$", var.azure_automation_schedule_start_time))
+    error_message = "`azure_automation_schedule_start_time` must be in RFC3339 UTC format like 2026-03-19T00:37:00Z."
+  }
+}
+
+
+variable "azure_automation_vault_auth_path" {
+  type        = string
+  description = "(Optional) Vault auth path used by the Azure Automation runbook."
   default     = ""
-
-  validation {
-    condition     = var.azure_devops_pipeline_branch_name == "" || trimspace(var.azure_devops_pipeline_branch_name) == var.azure_devops_pipeline_branch_name
-    error_message = "`azure_devops_pipeline_branch_name` must not include leading or trailing whitespace."
-  }
 }
 
-variable "azure_devops_pipeline_folder" {
-  type        = string
-  description = "(Optional) Azure DevOps pipeline folder path. Use `\\` for the root folder."
-  default     = "\\"
 
-  validation {
-    condition     = var.azure_devops_pipeline_folder == "\\" || (trimspace(var.azure_devops_pipeline_folder) != "" && !endswith(var.azure_devops_pipeline_folder, "\\"))
-    error_message = "`azure_devops_pipeline_folder` must be `\\` or a non-empty folder path that does not end with `\\`."
-  }
-}
-
-variable "azure_devops_pipeline_name" {
-  type        = string
-  description = "(Optional) Name of the Azure DevOps pipeline created by Terraform."
-  default     = "vault-pki-renewal"
-
-  validation {
-    condition     = trimspace(var.azure_devops_pipeline_name) != ""
-    error_message = "`azure_devops_pipeline_name` must not be empty."
-  }
-}
-
-variable "azure_devops_pipeline_yaml_path" {
-  type        = string
-  description = "(Optional) Path to the Azure Pipelines YAML file in the source repository."
-  default     = "azure-pipelines.yml"
-
-  validation {
-    condition     = trimspace(var.azure_devops_pipeline_yaml_path) != ""
-    error_message = "`azure_devops_pipeline_yaml_path` must not be empty."
-  }
-}
-
-variable "azure_devops_project_name" {
-  type        = string
-  description = "(Optional) Azure DevOps project name where the pipeline will be created. Leave empty to skip Azure DevOps pipeline creation."
-  default     = ""
-
-  validation {
-    condition     = var.azure_devops_project_name == "" || trimspace(var.azure_devops_project_name) == var.azure_devops_project_name
-    error_message = "`azure_devops_project_name` must not include leading or trailing whitespace."
-  }
-}
-
-variable "azure_devops_repository_id" {
-  type        = string
-  description = "(Optional) Repository identifier used by Azure DevOps pipeline creation for external repositories. For GitHub, use `<owner>/<repo>`. Leave empty when `azure_devops_repository_type` is `TfsGit`."
-  default     = ""
-
-  validation {
-    condition     = trimspace(var.azure_devops_project_name) == "" || var.azure_devops_repository_type == "TfsGit" || trimspace(var.azure_devops_repository_id) != ""
-    error_message = "`azure_devops_repository_id` must be set when `azure_devops_project_name` is set and `azure_devops_repository_type` is not `TfsGit`."
-  }
-}
-
-variable "azure_devops_repository_name" {
-  type        = string
-  description = "(Optional) Azure Repos Git repository name used when `azure_devops_repository_type` is `TfsGit`."
-  default     = ""
-
-  validation {
-    condition     = trimspace(var.azure_devops_project_name) == "" || var.azure_devops_repository_type != "TfsGit" || trimspace(var.azure_devops_repository_name) != ""
-    error_message = "`azure_devops_repository_name` must be set when `azure_devops_project_name` is set and `azure_devops_repository_type` is `TfsGit`."
-  }
-}
-
-variable "azure_devops_repository_service_connection_id" {
-  type        = string
-  description = "(Optional) Azure DevOps service connection ID for external repositories such as GitHub. Leave empty for `TfsGit`."
-  default     = ""
-
-  validation {
-    condition     = trimspace(var.azure_devops_project_name) == "" || !contains(["GitHub", "GitHubEnterprise"], var.azure_devops_repository_type) || trimspace(var.azure_devops_repository_service_connection_id) != ""
-    error_message = "`azure_devops_repository_service_connection_id` must be set when `azure_devops_project_name` is set and `azure_devops_repository_type` is `GitHub` or `GitHubEnterprise`."
-  }
-}
-
-variable "azure_devops_repository_type" {
-  type        = string
-  description = "(Optional) Repository type used by the Azure DevOps pipeline definition. Supported values are `GitHub`, `GitHubEnterprise`, and `TfsGit`."
-  default     = "GitHub"
-
-  validation {
-    condition     = contains(["GitHub", "GitHubEnterprise", "TfsGit"], var.azure_devops_repository_type)
-    error_message = "`azure_devops_repository_type` must be one of `GitHub`, `GitHubEnterprise`, or `TfsGit`."
-  }
-}
 
 variable "bootstrap_pfx_password_create_kv_mount" {
   type        = bool
@@ -486,39 +369,6 @@ variable "bootstrap_pfx_password_create_kv_mount" {
   default     = false
 }
 
-variable "bootstrap_pfx_password_kv_mount" {
-  type        = string
-  description = "(Optional) Vault KVv2 mount path where the generated bootstrap PFX password is stored."
-  default     = "kvv2_azure_devops"
-
-  validation {
-    condition     = trimspace(var.bootstrap_pfx_password_kv_mount) != ""
-    error_message = "`bootstrap_pfx_password_kv_mount` must not be empty."
-  }
-}
-
-variable "bootstrap_pfx_password_kv_path" {
-  type        = string
-  description = "(Optional) Vault KVv2 secret path where the generated bootstrap PFX password is stored."
-  default     = "azure-vaultpki-renewal/bootstrap"
-
-  validation {
-    condition     = trimspace(var.bootstrap_pfx_password_kv_path) != ""
-    error_message = "`bootstrap_pfx_password_kv_path` must not be empty."
-  }
-}
-
-variable "bootstrap_pfx_password_store_in_vault" {
-  type        = bool
-  description = "(Optional) When true, Terraform writes the generated bootstrap PFX password into Vault KVv2. Defaults to false so least-privilege Vault configurations do not require KV write access unless explicitly enabled."
-  default     = false
-}
-
-variable "enable_azure_devops_jwt_auth" {
-  type        = bool
-  description = "(Optional) When true, creates the Vault JWT role and policy for Azure DevOps pipeline authentication."
-  default     = true
-}
 
 variable "initial_certificate_common_name" {
   type        = string
@@ -550,6 +400,28 @@ variable "key_vault_certificate_name" {
   validation {
     condition     = can(regex("^[0-9A-Za-z-]{1,127}$", var.key_vault_certificate_name))
     error_message = "`key_vault_certificate_name` must be 1-127 characters and contain only letters, numbers, and hyphens."
+  }
+}
+
+variable "key_vault_additional_principal_object_ids" {
+  type        = list(string)
+  description = "(Optional) Additional Azure AD object IDs to grant read access to Key Vault secrets and certificates."
+  default     = []
+
+  validation {
+    condition     = alltrue([for object_id in var.key_vault_additional_principal_object_ids : can(regex("^[0-9a-fA-F-]{36}$", object_id))])
+    error_message = "`key_vault_additional_principal_object_ids` must contain valid Azure AD object IDs."
+  }
+}
+
+variable "key_vault_soft_delete_retention_days" {
+  type        = number
+  description = "(Optional) Soft delete retention (days) for Key Vault. Minimum is 7 in Azure."
+  default     = 7
+
+  validation {
+    condition     = var.key_vault_soft_delete_retention_days >= 7 && var.key_vault_soft_delete_retention_days <= 90
+    error_message = "`key_vault_soft_delete_retention_days` must be between 7 and 90."
   }
 }
 
@@ -586,6 +458,158 @@ variable "resource_group_name" {
   }
 }
 
+variable "resource_suffix" {
+  type        = string
+  description = "(Optional) Resource name suffix used to build shared resource names."
+  default     = "vault-pki-renewal"
+
+  validation {
+    condition     = trimspace(var.resource_suffix) != ""
+    error_message = "`resource_suffix` must not be empty."
+  }
+}
+
+variable "storage_account_name" {
+  type        = string
+  description = "(Optional) Storage account name override. Leave empty to derive from resource group suffix."
+  default     = ""
+
+  validation {
+    condition     = trimspace(var.storage_account_name) == "" || can(regex("^[a-z0-9]{3,24}$", var.storage_account_name))
+    error_message = "`storage_account_name` must be 3-24 lowercase letters/numbers when set."
+  }
+}
+
+variable "storage_allow_nested_items_to_be_public" {
+  type        = bool
+  description = "(Optional) Allow nested items within the storage account to be public."
+  default     = true
+}
+
+variable "storage_blob_access_tier" {
+  type        = string
+  description = "(Optional) Access tier for the package blob."
+  default     = "Hot"
+
+  validation {
+    condition     = contains(["Hot", "Cool", "Archive"], var.storage_blob_access_tier)
+    error_message = "`storage_blob_access_tier` must be Hot, Cool, or Archive."
+  }
+}
+
+variable "storage_blob_change_feed_enabled" {
+  type        = bool
+  description = "(Optional) Enable blob change feed on the storage account."
+  default     = false
+}
+
+variable "storage_blob_content_type" {
+  type        = string
+  description = "(Optional) Content type for the package blob."
+  default     = "application/octet-stream"
+
+  validation {
+    condition     = trimspace(var.storage_blob_content_type) != ""
+    error_message = "`storage_blob_content_type` must not be empty."
+  }
+}
+
+variable "storage_blob_last_access_time_enabled" {
+  type        = bool
+  description = "(Optional) Enable blob last access time tracking."
+  default     = false
+}
+
+variable "storage_blob_name" {
+  type        = string
+  description = "(Optional) Package blob name stored in the container."
+  default     = "cryptography-3.2.1-cp38-cp38-win_amd64.whl"
+
+  validation {
+    condition     = trimspace(var.storage_blob_name) != ""
+    error_message = "`storage_blob_name` must not be empty."
+  }
+}
+
+variable "storage_blob_parallelism" {
+  type        = number
+  description = "(Optional) Upload parallelism for the package blob."
+  default     = 8
+
+  validation {
+    condition     = var.storage_blob_parallelism >= 1
+    error_message = "`storage_blob_parallelism` must be at least 1."
+  }
+}
+
+variable "storage_blob_source" {
+  type        = string
+  description = "(Optional) Local path to the package blob source file."
+  default     = "./packages/cryptography-3.2.1-cp38-cp38-win_amd64.whl"
+
+  validation {
+    condition     = trimspace(var.storage_blob_source) != ""
+    error_message = "`storage_blob_source` must not be empty."
+  }
+}
+
+variable "storage_blob_type" {
+  type        = string
+  description = "(Optional) Storage blob type for the package."
+  default     = "Block"
+
+  validation {
+    condition     = contains(["Block", "Append", "Page"], var.storage_blob_type)
+    error_message = "`storage_blob_type` must be Block, Append, or Page."
+  }
+}
+
+variable "storage_blob_versioning_enabled" {
+  type        = bool
+  description = "(Optional) Enable blob versioning on the storage account."
+  default     = false
+}
+
+variable "storage_container_access_type" {
+  type        = string
+  description = "(Optional) Access level for the storage container."
+  default     = "private"
+
+  validation {
+    condition     = contains(["private", "blob", "container"], var.storage_container_access_type)
+    error_message = "`storage_container_access_type` must be private, blob, or container."
+  }
+}
+
+variable "storage_container_name" {
+  type        = string
+  description = "(Optional) Storage container name for the automation package."
+  default     = "python-packages"
+
+  validation {
+    condition     = trimspace(var.storage_container_name) != ""
+    error_message = "`storage_container_name` must not be empty."
+  }
+}
+
+variable "storage_infrastructure_encryption_enabled" {
+  type        = bool
+  description = "(Optional) Enable infrastructure encryption for the storage account."
+  default     = false
+}
+
+variable "storage_local_user_enabled" {
+  type        = bool
+  description = "(Optional) Enable local users for the storage account."
+  default     = true
+}
+
+variable "storage_shared_access_key_enabled" {
+  type        = bool
+  description = "(Optional) Enable shared access key authorization for the storage account."
+  default     = true
+}
+
 variable "tags" {
   type        = map(string)
   description = "(Optional) Tags applied to Azure resources."
@@ -599,12 +623,55 @@ variable "tags" {
 
 variable "vault_namespace" {
   type        = string
-  description = "(Optional) Vault namespace injected into the generated Azure DevOps pipeline file."
-  default     = ""
+  description = "(Required) Vault namespace used by certificate renewal automation."
 
   validation {
-    condition     = var.vault_namespace == "" || (trimspace(var.vault_namespace) == var.vault_namespace && !can(regex("\\s", var.vault_namespace)))
-    error_message = "`vault_namespace` must not include whitespace characters."
+    condition     = trimspace(var.vault_namespace) != "" && !can(regex("\\s", var.vault_namespace))
+    error_message = "`vault_namespace` must not be empty and must not include whitespace characters."
+  }
+}
+
+variable "vault_policy_name" {
+  type        = string
+  description = "(Optional) Vault policy name used for certificate issuance permissions."
+  default     = "vault-pki-renewal"
+
+  validation {
+    condition     = trimspace(var.vault_policy_name) != ""
+    error_message = "`vault_policy_name` must not be empty."
+  }
+}
+
+variable "vault_approle_role_name" {
+  type        = string
+  description = "(Optional) Vault AppRole name used by the automation workload."
+  default     = "pki-renewal-automation"
+
+  validation {
+    condition     = trimspace(var.vault_approle_role_name) != ""
+    error_message = "`vault_approle_role_name` must not be empty."
+  }
+}
+
+variable "vault_approle_token_ttl" {
+  type        = number
+  description = "(Optional) Vault AppRole token TTL in seconds."
+  default     = 300
+
+  validation {
+    condition     = var.vault_approle_token_ttl > 0
+    error_message = "`vault_approle_token_ttl` must be greater than 0."
+  }
+}
+
+variable "vault_approle_token_max_ttl" {
+  type        = number
+  description = "(Optional) Vault AppRole token max TTL in seconds."
+  default     = 600
+
+  validation {
+    condition     = var.vault_approle_token_max_ttl > 0
+    error_message = "`vault_approle_token_max_ttl` must be greater than 0."
   }
 }
 
@@ -627,6 +694,17 @@ variable "vault_pki_role" {
   validation {
     condition     = trimspace(var.vault_pki_role) != ""
     error_message = "`vault_pki_role` must not be empty."
+  }
+}
+
+variable "vault_pki_role_max_ttl" {
+  type        = number
+  description = "(Optional) Maximum TTL in seconds for certificates issued by the Vault PKI role."
+  default     = 86400
+
+  validation {
+    condition     = var.vault_pki_role_max_ttl > 0
+    error_message = "`vault_pki_role_max_ttl` must be greater than 0."
   }
 }
 

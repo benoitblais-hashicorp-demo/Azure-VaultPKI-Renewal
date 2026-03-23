@@ -4,8 +4,8 @@ This Terraform project provisions Azure infrastructure to demonstrate automatic 
 
 ## What This Demo Demonstrates
 
-- A scheduled Azure DevOps pipeline requests a renewed certificate from Vault PKI.
-- The pipeline imports the renewed certificate (PFX) into Azure Key Vault under a stable certificate name.
+- A scheduled Azure Automation runbook requests a renewed certificate from Vault PKI.
+- The runbook imports the renewed certificate into Azure Key Vault under a stable certificate name.
 - Azure Application Gateway reads TLS material from Azure Key Vault and serves HTTPS.
 - Certificate rotation happens by updating the same Key Vault certificate object used by Application Gateway.
 
@@ -15,8 +15,8 @@ This Terraform project provisions Azure infrastructure to demonstrate automatic 
 - Azure Key Vault storing the TLS certificate
 - Azure Application Gateway (Standard v2) with HTTPS listener
 - User-assigned managed identity for Application Gateway to read Key Vault secrets
-- Azure DevOps pipeline (`azure-pipelines.yml`) for hourly renewal automation
-- Python renewal script (`scripts/renew_certificate.py`) for Vault PKI issue + Key Vault import
+- Azure Automation Account + Python3 runbook for hourly renewal automation
+- Python runbook script (`scripts/automation_runbook.py`) for Vault PKI issue + Key Vault import
 
 ## Permissions
 
@@ -27,7 +27,7 @@ The Azure identity running Terraform needs permission to create and manage:
 - Resource Group, VNet/Subnet, Public IP, Application Gateway, and Managed Identity
 - Azure Key Vault, access policies, and certificates
 
-The Azure DevOps service connection needs permission to:
+The Azure Automation managed identity needs permission to:
 
 - Import certificates to the target Key Vault
 - Read certificate metadata from the target Key Vault
@@ -49,19 +49,21 @@ The automation token is expected to be scoped to:
 ### Azure Authentication
 
 - Terraform authenticates through the AzureRM provider using your standard Azure identity flow.
-- Azure DevOps authenticates with an Azure service connection (`AZURE_SERVICE_CONNECTION`).
+- Azure Automation runbook authenticates with its managed identity.
 
 ### Vault Authentication
 
 Terraform `vault` provider uses dynamic credentials from environment variables (for example HCP Terraform dynamic credentials), not a hardcoded token in code.
 
-The renewal automation authenticates to Vault using environment variables available to the pipeline (for example secure Azure DevOps variables).
+The renewal automation authenticates to Vault using runbook variables and AppRole.
 
-Required pipeline Vault environment values:
+Required runbook Vault values:
 
 - `VAULT_ADDR`
-- `VAULT_NAMESPACE` (optional)
-- `VAULT_TOKEN`
+- `VAULT_NAMESPACE` (required in this module)
+- `VAULT_AUTH_PATH`
+- `VAULT_APPROLE_ROLE_ID`
+- `VAULT_APPROLE_SECRET_ID`
 - `VAULT_PKI_PATH`
 - `VAULT_PKI_ROLE`
 
@@ -74,16 +76,23 @@ Required pipeline Vault environment values:
 
 ## How Certificate Renewal Works in this Demo
 
-This demo uses a scheduled pipeline model where Azure DevOps runs every hour, issues a certificate from Vault PKI, converts it to PFX, and imports it back to Azure Key Vault.
+This demo uses a scheduled runbook model where Azure Automation runs every hour, issues a certificate from Vault PKI, and imports it to Azure Key Vault.
 
 ### The Workflow
 
-1. Azure DevOps pipeline runs on schedule (`0 * * * *`) or manual execution.
-2. Pipeline calls Vault PKI issue API with configured role and Common Name.
-3. Script builds a PKCS#12 (PFX) bundle from issued cert and private key.
-4. Script imports the renewed PFX to the same certificate name in Key Vault.
+1. Azure Automation runbook runs on schedule or manual execution.
+2. Runbook calls Vault PKI issue API with configured role and Common Name.
+3. Runbook imports the renewed certificate to the same certificate name in Key Vault.
 5. Application Gateway continues referencing Key Vault certificate and uses renewed material.
 
 ### Run the Demo Immediately (No 1-Hour Wait)
 
-You can run the Azure DevOps pipeline manually from the Azure DevOps UI to force immediate certificate renewal.
+You can run the Azure Automation runbook manually from the Azure Portal to force immediate certificate renewal.
+
+## Demo Cleanup Note
+
+Azure Key Vault enforces soft delete with a minimum 7-day retention. This demo sets purge protection to false, so you can delete and then purge the vault to recreate it immediately. Use Azure CLI after destroy:
+
+```bash
+az keyvault purge --name <key-vault-name>
+```

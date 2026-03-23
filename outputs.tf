@@ -25,7 +25,7 @@ output "key_vault_certificate_name" {
 
 output "key_vault_name" {
   description = "Azure Key Vault name storing the TLS certificate"
-  value       = azurerm_key_vault.this.name
+  value       = module.keyvault.keyvault.name
 }
 
 output "resource_group_name" {

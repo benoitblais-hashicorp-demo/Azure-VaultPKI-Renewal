@@ -1,13 +1,36 @@
 locals {
-  bootstrap_key_vault_secret_id = azurerm_key_vault_certificate.bootstrap.versionless_secret_id
+  bootstrap_key_vault_secret_id = module.keyvault_certificate_management.certificates[var.key_vault_certificate_name].versionless_secret_id
   bootstrap_pem_bundle = join("\n", compact([
     vault_pki_secret_backend_cert.bootstrap.certificate,
     vault_pki_secret_backend_cert.bootstrap.private_key
   ]))
-  create_azure_automation_runbook             = var.enable_azure_automation_runbook
-  store_bootstrap_pfx_password                = var.bootstrap_pfx_password_store_in_vault && trimspace(var.bootstrap_pfx_password_kv_mount) != "" && trimspace(var.bootstrap_pfx_password_kv_path) != ""
-  create_vault_jwt_auth                       = var.enable_vault_jwt_auth && var.vault_pki_path != "" && var.vault_pki_role != ""
-  name_prefix                                 = lower(replace(var.name_prefix, "_", "-"))
+  create_azure_automation_runbook = var.enable_azure_automation_runbook
+  store_bootstrap_pfx_password    = var.bootstrap_pfx_password_store_in_vault && trimspace(var.bootstrap_pfx_password_kv_mount) != "" && trimspace(var.bootstrap_pfx_password_kv_path) != ""
+  create_vault_jwt_auth           = var.enable_vault_jwt_auth && var.vault_pki_path != "" && var.vault_pki_role != ""
+  key_vault_access_configurations = concat(
+    [
+      {
+        tenant_id               = data.azurerm_client_config.current.tenant_id
+        object_id               = data.azurerm_client_config.current.object_id
+        certificate_permissions = ["Create", "Delete", "Get", "Import", "List", "Update"]
+        secret_permissions      = ["Get", "List", "Set"]
+      },
+      {
+        tenant_id          = azurerm_user_assigned_identity.app_gateway.tenant_id
+        object_id          = azurerm_user_assigned_identity.app_gateway.principal_id
+        secret_permissions = ["Get", "List"]
+      }
+    ],
+    local.create_azure_automation_runbook ? [
+      {
+        tenant_id               = data.azurerm_client_config.current.tenant_id
+        object_id               = azurerm_automation_account.certificate_renewal[0].identity[0].principal_id
+        certificate_permissions = ["Create", "Get", "Import", "List", "Update"]
+        secret_permissions      = ["Get", "List", "Set"]
+      }
+    ] : []
+  )
+  name_prefix                     = lower(replace(var.name_prefix, "_", "-"))
 }
 
 data "azurerm_client_config" "current" {}
@@ -49,7 +72,10 @@ resource "azurerm_user_assigned_identity" "app_gateway" {
   tags                = var.tags
 }
 
-resource "azurerm_key_vault" "this" {
+module "keyvault" {
+  source  = "app.terraform.io/benoitblais-hashicorp/terraform-azurerm-keyvault/azurerm"
+  version = "0.0.1"
+
   name                            = substr(replace("${local.name_prefix}kv", "-", ""), 0, 24)
   location                        = azurerm_resource_group.this.location
   resource_group_name             = azurerm_resource_group.this.name
@@ -60,60 +86,8 @@ resource "azurerm_key_vault" "this" {
   purge_protection_enabled        = false
   soft_delete_retention_days      = 7
   tags                            = var.tags
-}
 
-resource "azurerm_key_vault_access_policy" "terraform_identity" {
-  key_vault_id = azurerm_key_vault.this.id
-  tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = data.azurerm_client_config.current.object_id
-
-  certificate_permissions = [
-    "Create",
-    "Delete",
-    "Get",
-    "Import",
-    "List",
-    "Update"
-  ]
-
-  secret_permissions = [
-    "Get",
-    "List",
-    "Set"
-  ]
-}
-
-resource "azurerm_key_vault_access_policy" "app_gateway_identity" {
-  key_vault_id = azurerm_key_vault.this.id
-  tenant_id    = azurerm_user_assigned_identity.app_gateway.tenant_id
-  object_id    = azurerm_user_assigned_identity.app_gateway.principal_id
-
-  secret_permissions = [
-    "Get",
-    "List"
-  ]
-}
-
-resource "azurerm_key_vault_access_policy" "automation_identity" {
-  count = local.create_azure_automation_runbook ? 1 : 0
-
-  key_vault_id = azurerm_key_vault.this.id
-  tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = azurerm_automation_account.certificate_renewal[0].identity[0].principal_id
-
-  certificate_permissions = [
-    "Create",
-    "Get",
-    "Import",
-    "List",
-    "Update"
-  ]
-
-  secret_permissions = [
-    "Get",
-    "List",
-    "Set"
-  ]
+  access_configurations = local.key_vault_access_configurations
 }
 
 resource "azurerm_automation_account" "certificate_renewal" {
@@ -176,7 +150,7 @@ resource "azurerm_automation_variable_string" "key_vault_name" {
   name                    = "AZURE_KEYVAULT_NAME"
   resource_group_name     = azurerm_resource_group.this.name
   automation_account_name = azurerm_automation_account.certificate_renewal[0].name
-  value                   = azurerm_key_vault.this.name
+  value                   = module.keyvault.keyvault.name
 }
 
 resource "azurerm_automation_variable_string" "pfx_password" {
@@ -283,7 +257,7 @@ resource "azurerm_automation_job_schedule" "certificate_renewal" {
   schedule_name           = azurerm_automation_schedule.certificate_renewal[0].name
   runbook_name            = azurerm_automation_runbook.certificate_renewal[0].name
 
-  depends_on = [azurerm_key_vault_access_policy.automation_identity]
+  depends_on = [module.keyvault]
 }
 
 resource "vault_policy" "workload_pki_issue" {
@@ -373,32 +347,36 @@ resource "vault_pki_secret_backend_cert" "bootstrap" {
   depends_on = [vault_pki_secret_backend_role.bootstrap]
 }
 
-resource "azurerm_key_vault_certificate" "bootstrap" {
-  name         = var.key_vault_certificate_name
-  key_vault_id = azurerm_key_vault.this.id
+module "keyvault_certificate_management" {
+  source  = "app.terraform.io/benoitblais-hashicorp/terraform-azurerm-keyvault-cert-management/azurerm"
+  version = "0.0.1"
 
-  certificate {
-    contents = base64encode(local.bootstrap_pem_bundle)
-  }
+  key_vault_id = module.keyvault.id
 
-  certificate_policy {
-    issuer_parameters {
-      name = "Unknown"
+  certificates = [
+    {
+      name = var.key_vault_certificate_name
+      certificate = {
+        contents = base64encode(local.bootstrap_pem_bundle)
+      }
+      certificate_policy = {
+        issuer_parameters = {
+          name = "Unknown"
+        }
+        key_properties = {
+          exportable = true
+          key_size   = 2048
+          key_type   = "RSA"
+          reuse_key  = false
+        }
+        secret_properties = {
+          content_type = "application/x-pem-file"
+        }
+      }
     }
+  ]
 
-    key_properties {
-      exportable = true
-      key_size   = 2048
-      key_type   = "RSA"
-      reuse_key  = false
-    }
-
-    secret_properties {
-      content_type = "application/x-pem-file"
-    }
-  }
-
-  depends_on = [azurerm_key_vault_access_policy.terraform_identity]
+  depends_on = [module.keyvault]
 }
 
 resource "azurerm_application_gateway" "this" {
@@ -474,8 +452,8 @@ resource "azurerm_application_gateway" "this" {
   }
 
   depends_on = [
-    azurerm_key_vault_certificate.bootstrap,
-    azurerm_key_vault_access_policy.app_gateway_identity
+    module.keyvault_certificate_management,
+    module.keyvault
   ]
 }
 
@@ -487,4 +465,29 @@ import {
     var.resource_group_name,
     "${local.name_prefix}-appgw"
   )
+}
+
+moved {
+  from = azurerm_key_vault.this
+  to   = module.keyvault.azurerm_key_vault.this
+}
+
+moved {
+  from = azurerm_key_vault_access_policy.terraform_identity
+  to   = module.keyvault.azurerm_key_vault_access_policy.custom_policy["0"]
+}
+
+moved {
+  from = azurerm_key_vault_access_policy.app_gateway_identity
+  to   = module.keyvault.azurerm_key_vault_access_policy.custom_policy["1"]
+}
+
+moved {
+  from = azurerm_key_vault_access_policy.automation_identity[0]
+  to   = module.keyvault.azurerm_key_vault_access_policy.custom_policy["2"]
+}
+
+moved {
+  from = azurerm_key_vault_certificate.bootstrap
+  to   = module.keyvault_certificate_management.azurerm_key_vault_certificate.this["appgw.demo.example.com"]
 }

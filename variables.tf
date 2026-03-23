@@ -14,7 +14,17 @@ variable "vault_addr" {
 
   validation {
     condition     = can(regex("^https?://", var.vault_addr))
-    error_message = "`vault_addr` must start with http:// or https://."
+    error_message = "`vault_addr` must start with \"http://\" or \"https://\"."
+  }
+}
+
+variable "vault_namespace" {
+  type        = string
+  description = "(Required) Vault namespace used by certificate renewal automation."
+
+  validation {
+    condition     = trimspace(var.vault_namespace) != "" && !can(regex("\\s", var.vault_namespace))
+    error_message = "`vault_namespace` must not be empty and must not include whitespace characters."
   }
 }
 
@@ -69,7 +79,7 @@ variable "app_gateway_backend_http_settings_cookie_based_affinity" {
 
   validation {
     condition     = contains(["Enabled", "Disabled"], var.app_gateway_backend_http_settings_cookie_based_affinity)
-    error_message = "`app_gateway_backend_http_settings_cookie_based_affinity` must be `Enabled` or `Disabled`."
+    error_message = "`app_gateway_backend_http_settings_cookie_based_affinity` must be \"Enabled\" or \"Disabled\"."
   }
 }
 
@@ -113,7 +123,7 @@ variable "app_gateway_backend_http_settings_protocol" {
 
   validation {
     condition     = contains(["Http", "Https"], var.app_gateway_backend_http_settings_protocol)
-    error_message = "`app_gateway_backend_http_settings_protocol` must be `Http` or `Https`."
+    error_message = "`app_gateway_backend_http_settings_protocol` must be \"Http\" or \"Https\"."
   }
 }
 
@@ -190,7 +200,7 @@ variable "app_gateway_http_listener_protocol" {
 
   validation {
     condition     = contains(["Http", "Https"], var.app_gateway_http_listener_protocol)
-    error_message = "`app_gateway_http_listener_protocol` must be `Http` or `Https`."
+    error_message = "`app_gateway_http_listener_protocol` must be \"Http\" or \"Https\"."
   }
 }
 
@@ -223,7 +233,7 @@ variable "app_gateway_request_routing_rule_type" {
 
   validation {
     condition     = contains(["Basic", "PathBasedRouting"], var.app_gateway_request_routing_rule_type)
-    error_message = "`app_gateway_request_routing_rule_type` must be `Basic` or `PathBasedRouting`."
+    error_message = "`app_gateway_request_routing_rule_type` must be \"Basic\" or \"PathBasedRouting\"."
   }
 }
 
@@ -332,17 +342,6 @@ variable "azure_automation_schedule_name" {
   }
 }
 
-variable "azure_automation_schedule_timezone" {
-  type        = string
-  description = "(Optional) Azure Automation schedule timezone."
-  default     = "Etc/UTC"
-
-  validation {
-    condition     = trimspace(var.azure_automation_schedule_timezone) != ""
-    error_message = "`azure_automation_schedule_timezone` must not be empty."
-  }
-}
-
 variable "azure_automation_schedule_start_time" {
   type        = string
   description = "(Optional) RFC3339 UTC start time for the Azure Automation schedule."
@@ -354,21 +353,27 @@ variable "azure_automation_schedule_start_time" {
   }
 }
 
+variable "azure_automation_schedule_timezone" {
+  type        = string
+  description = "(Optional) Azure Automation schedule timezone."
+  default     = "Etc/UTC"
+
+  validation {
+    condition     = trimspace(var.azure_automation_schedule_timezone) != ""
+    error_message = "`azure_automation_schedule_timezone` must not be empty."
+  }
+}
 
 variable "azure_automation_vault_auth_path" {
   type        = string
   description = "(Optional) Vault auth path used by the Azure Automation runbook."
   default     = ""
+
+  validation {
+    condition     = trimspace(var.azure_automation_vault_auth_path) == "" || !can(regex("\\s", var.azure_automation_vault_auth_path))
+    error_message = "`azure_automation_vault_auth_path` must not include whitespace characters."
+  }
 }
-
-
-
-variable "bootstrap_pfx_password_create_kv_mount" {
-  type        = bool
-  description = "(Optional) When true, Terraform creates the KVv2 mount for bootstrap PFX password storage; set false when the mount already exists or mount management is not permitted."
-  default     = false
-}
-
 
 variable "initial_certificate_common_name" {
   type        = string
@@ -403,17 +408,6 @@ variable "key_vault_certificate_name" {
   }
 }
 
-variable "key_vault_additional_principal_object_ids" {
-  type        = list(string)
-  description = "(Optional) Additional Azure AD object IDs to grant read access to Key Vault secrets and certificates."
-  default     = []
-
-  validation {
-    condition     = alltrue([for object_id in var.key_vault_additional_principal_object_ids : can(regex("^[0-9a-fA-F-]{36}$", object_id))])
-    error_message = "`key_vault_additional_principal_object_ids` must contain valid Azure AD object IDs."
-  }
-}
-
 variable "key_vault_soft_delete_retention_days" {
   type        = number
   description = "(Optional) Soft delete retention (days) for Key Vault. Minimum is 7 in Azure."
@@ -433,28 +427,6 @@ variable "location" {
   validation {
     condition     = trimspace(var.location) != ""
     error_message = "`location` must not be empty."
-  }
-}
-
-variable "name_prefix" {
-  type        = string
-  description = "(Optional) Prefix used for Azure resource naming."
-  default     = "vault-pki"
-
-  validation {
-    condition     = trimspace(var.name_prefix) != ""
-    error_message = "`name_prefix` must not be empty."
-  }
-}
-
-variable "resource_group_name" {
-  type        = string
-  description = "(Optional) Resource group name for all demo resources."
-  default     = "rg-vault-pki-renewal"
-
-  validation {
-    condition     = trimspace(var.resource_group_name) != ""
-    error_message = "`resource_group_name` must not be empty."
   }
 }
 
@@ -493,7 +465,7 @@ variable "storage_blob_access_tier" {
 
   validation {
     condition     = contains(["Hot", "Cool", "Archive"], var.storage_blob_access_tier)
-    error_message = "`storage_blob_access_tier` must be Hot, Cool, or Archive."
+    error_message = "`storage_blob_access_tier` must be \"Hot\", \"Cool\", or \"Archive\"."
   }
 }
 
@@ -560,7 +532,7 @@ variable "storage_blob_type" {
 
   validation {
     condition     = contains(["Block", "Append", "Page"], var.storage_blob_type)
-    error_message = "`storage_blob_type` must be Block, Append, or Page."
+    error_message = "`storage_blob_type` must be \"Block\", \"Append\", or \"Page\"."
   }
 }
 
@@ -577,7 +549,7 @@ variable "storage_container_access_type" {
 
   validation {
     condition     = contains(["private", "blob", "container"], var.storage_container_access_type)
-    error_message = "`storage_container_access_type` must be private, blob, or container."
+    error_message = "`storage_container_access_type` must be \"private\", \"blob\", or \"container\"."
   }
 }
 
@@ -621,27 +593,6 @@ variable "tags" {
   }
 }
 
-variable "vault_namespace" {
-  type        = string
-  description = "(Required) Vault namespace used by certificate renewal automation."
-
-  validation {
-    condition     = trimspace(var.vault_namespace) != "" && !can(regex("\\s", var.vault_namespace))
-    error_message = "`vault_namespace` must not be empty and must not include whitespace characters."
-  }
-}
-
-variable "vault_policy_name" {
-  type        = string
-  description = "(Optional) Vault policy name used for certificate issuance permissions."
-  default     = "vault-pki-renewal"
-
-  validation {
-    condition     = trimspace(var.vault_policy_name) != ""
-    error_message = "`vault_policy_name` must not be empty."
-  }
-}
-
 variable "vault_approle_role_name" {
   type        = string
   description = "(Optional) Vault AppRole name used by the automation workload."
@@ -653,17 +604,6 @@ variable "vault_approle_role_name" {
   }
 }
 
-variable "vault_approle_token_ttl" {
-  type        = number
-  description = "(Optional) Vault AppRole token TTL in seconds."
-  default     = 300
-
-  validation {
-    condition     = var.vault_approle_token_ttl > 0
-    error_message = "`vault_approle_token_ttl` must be greater than 0."
-  }
-}
-
 variable "vault_approle_token_max_ttl" {
   type        = number
   description = "(Optional) Vault AppRole token max TTL in seconds."
@@ -672,6 +612,17 @@ variable "vault_approle_token_max_ttl" {
   validation {
     condition     = var.vault_approle_token_max_ttl > 0
     error_message = "`vault_approle_token_max_ttl` must be greater than 0."
+  }
+}
+
+variable "vault_approle_token_ttl" {
+  type        = number
+  description = "(Optional) Vault AppRole token TTL in seconds."
+  default     = 300
+
+  validation {
+    condition     = var.vault_approle_token_ttl > 0
+    error_message = "`vault_approle_token_ttl` must be greater than 0."
   }
 }
 
@@ -705,6 +656,17 @@ variable "vault_pki_role_max_ttl" {
   validation {
     condition     = var.vault_pki_role_max_ttl > 0
     error_message = "`vault_pki_role_max_ttl` must be greater than 0."
+  }
+}
+
+variable "vault_policy_name" {
+  type        = string
+  description = "(Optional) Vault policy name used for certificate issuance permissions."
+  default     = "vault-pki-renewal"
+
+  validation {
+    condition     = trimspace(var.vault_policy_name) != ""
+    error_message = "`vault_policy_name` must not be empty."
   }
 }
 

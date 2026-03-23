@@ -1,13 +1,4 @@
 terraform {
-  backend "remote" {
-    hostname     = "app.terraform.io"
-    organization = "benoitblais-hashicorp"
-
-    workspaces {
-      name = "azure-vaultpki-renewal"
-    }
-  }
-
   required_version = ">= 1.6.0"
 
   required_providers {

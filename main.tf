@@ -435,15 +435,15 @@ resource "azurerm_automation_account" "certificate_renewal" {
 # Upload the runbook that issues and imports certificates.
 
 resource "azurerm_automation_runbook" "certificate_renewal" {
-  name                    = var.azure_automation_runbook_name
-  location                = azurerm_resource_group.this.location
-  resource_group_name     = azurerm_resource_group.this.name
-  automation_account_name = azurerm_automation_account.certificate_renewal.name
-  log_progress            = true
-  log_verbose             = var.azure_automation_runbook_log_verbose
-  runbook_type            = "Python"
+  name                     = var.azure_automation_runbook_name
+  location                 = azurerm_resource_group.this.location
+  resource_group_name      = azurerm_resource_group.this.name
+  automation_account_name  = azurerm_automation_account.certificate_renewal.name
+  log_progress             = true
+  log_verbose              = var.azure_automation_runbook_log_verbose
+  runbook_type             = "Python"
   runtime_environment_name = "Python"
-  content                 = file("${path.module}/scripts/automation_runbook.py")
+  content                  = file("${path.module}/scripts/automation_runbook.py")
 }
 
 # Configure certificate request inputs for the runbook.

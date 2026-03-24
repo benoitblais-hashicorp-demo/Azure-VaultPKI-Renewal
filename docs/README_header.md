@@ -162,6 +162,17 @@ Use environment variables to authenticate with a static Vault token:
 - [HCP Terraform Dynamic Credentials](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/dynamic-provider-credentials)
 - [Vault JWT Auth Method](https://developer.hashicorp.com/vault/docs/auth/jwt)
 
+#### Static Vault Token
+
+If you cannot use dynamic credentials, you can authenticate with a static Vault token.
+
+Use environment variables to authenticate with a static Vault token:
+
+- **TFC_VAULT_PROVIDER_AUTH**: Set the `TFC_VAULT_PROVIDER_AUTH` environment variable to `true`.
+- **TFC_VAULT_ADDR**: Set the `TFC_VAULT_ADDR` environment variable to your Vault server address (for example `https://vault.example.com:8200`).
+- **TFC_VAULT_NAMESPACE**: (Optional) Set the `TFC_VAULT_NAMESPACE` environment variable to the parent namespace where the module will create the sub-namespace (for example `admin`). If not set, the namespace will be created at the root level.
+- **TFC_VAULT_RUN_ROLE**: Set the `TFC_VAULT_RUN_ROLE` environment variable to the JWT role name configured in Vault (for example `hcp-terraform`).
+
 #### Runbook Authentication (AppRole)
 
 The Azure Automation runbook authenticates to Vault using AppRole credentials passed as automation variables.

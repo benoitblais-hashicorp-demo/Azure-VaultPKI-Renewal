@@ -67,16 +67,16 @@ module "keyvault" {
         storage_permissions     = []
       }
     ],
-    # [
-    #   {
-    #     tenant_id               = data.azurerm_client_config.current.tenant_id
-    #     object_id               = azurerm_automation_account.certificate_renewal.identity[0].principal_id
-    #     certificate_permissions = ["Create", "Get", "Import", "List", "Update"]
-    #     key_permissions         = []
-    #     secret_permissions      = ["Get", "List", "Set"]
-    #     storage_permissions     = []
-    #   }
-    # ]
+    [
+      {
+        tenant_id               = data.azurerm_client_config.current.tenant_id
+        object_id               = azurerm_automation_account.certificate_renewal.identity[0].principal_id
+        certificate_permissions = ["Create", "Get", "Import", "List", "Update"]
+        key_permissions         = []
+        secret_permissions      = ["Get", "List", "Set"]
+        storage_permissions     = []
+      }
+    ]
   )
 
   network_acls = {
@@ -256,96 +256,96 @@ resource "azurerm_application_gateway" "this" {
 }
 
 
-# # Use the storage account module to create a storage account for hosting Python packages used by the automation runbook for certificate renewal.
-# # The module also creates a blob container and uploads the specified Python package wheel file.
+# Use the storage account module to create a storage account for hosting Python packages used by the automation runbook for certificate renewal.
+# The module also creates a blob container and uploads the specified Python package wheel file.
 
-# module "storage_account" {
-#   source  = "app.terraform.io/benoitblais-hashicorp/storage-account/azurerm"
-#   version = "0.0.4"
+module "storage_account" {
+  source  = "app.terraform.io/benoitblais-hashicorp/storage-account/azurerm"
+  version = "0.0.4"
 
-#   name                              = trimspace(var.storage_account_name) != "" ? var.storage_account_name : substr("st${replace(lower(var.resource_suffix), "-", "")}", 0, 24)
-#   resource_group_name               = azurerm_resource_group.this.name
-#   location                          = azurerm_resource_group.this.location
-#   allow_nested_items_to_be_public   = var.storage_allow_nested_items_to_be_public
-#   infrastructure_encryption_enabled = var.storage_infrastructure_encryption_enabled
-#   local_user_enabled                = var.storage_local_user_enabled
-#   shared_access_key_enabled         = var.storage_shared_access_key_enabled
-#   tags                              = var.tags
+  name                              = trimspace(var.storage_account_name) != "" ? var.storage_account_name : substr("st${replace(lower(var.resource_suffix), "-", "")}", 0, 24)
+  resource_group_name               = azurerm_resource_group.this.name
+  location                          = azurerm_resource_group.this.location
+  allow_nested_items_to_be_public   = var.storage_allow_nested_items_to_be_public
+  infrastructure_encryption_enabled = var.storage_infrastructure_encryption_enabled
+  local_user_enabled                = var.storage_local_user_enabled
+  shared_access_key_enabled         = var.storage_shared_access_key_enabled
+  tags                              = var.tags
 
-#   blob_properties = {
-#     change_feed_enabled      = var.storage_blob_change_feed_enabled
-#     last_access_time_enabled = var.storage_blob_last_access_time_enabled
-#     versioning_enabled       = var.storage_blob_versioning_enabled
-#   }
+  blob_properties = {
+    change_feed_enabled      = var.storage_blob_change_feed_enabled
+    last_access_time_enabled = var.storage_blob_last_access_time_enabled
+    versioning_enabled       = var.storage_blob_versioning_enabled
+  }
 
-#   storage_containers = [
-#     {
-#       name                  = var.storage_container_name
-#       container_access_type = var.storage_container_access_type
-#     }
-#   ]
+  storage_containers = [
+    {
+      name                  = var.storage_container_name
+      container_access_type = var.storage_container_access_type
+    }
+  ]
 
-#   storage_blobs = [
-#     {
-#       name           = var.storage_blob_name
-#       container_name = var.storage_container_name
-#       type           = var.storage_blob_type
-#       source         = var.storage_blob_source
-#       access_tier    = var.storage_blob_access_tier
-#       content_type   = var.storage_blob_content_type
-#       parallelism    = var.storage_blob_parallelism
-#     }
-#   ]
-# }
+  storage_blobs = [
+    {
+      name           = var.storage_blob_name
+      container_name = var.storage_container_name
+      type           = var.storage_blob_type
+      source         = var.storage_blob_source
+      access_tier    = var.storage_blob_access_tier
+      content_type   = var.storage_blob_content_type
+      parallelism    = var.storage_blob_parallelism
+    }
+  ]
+}
 
-# # Generate a SAS token for the storage account to allow the automation runbook to access the Python package blob for certificate renewal.
+# Generate a SAS token for the storage account to allow the automation runbook to access the Python package blob for certificate renewal.
 
-# data "azurerm_storage_account_sas" "automation_packages" {
-#   connection_string = module.storage_account.storage_account_primary_connection_string
-#   https_only        = true
-#   start             = "2024-01-01"
-#   expiry            = "2099-01-01"
+data "azurerm_storage_account_sas" "automation_packages" {
+  connection_string = module.storage_account.storage_account_primary_connection_string
+  https_only        = true
+  start             = "2024-01-01"
+  expiry            = "2099-01-01"
 
-#   services {
-#     blob  = true
-#     queue = false
-#     table = false
-#     file  = false
-#   }
+  services {
+    blob  = true
+    queue = false
+    table = false
+    file  = false
+  }
 
-#   resource_types {
-#     service   = true
-#     container = true
-#     object    = true
-#   }
+  resource_types {
+    service   = true
+    container = true
+    object    = true
+  }
 
-#   permissions {
-#     read    = true
-#     list    = true
-#     write   = false
-#     add     = false
-#     create  = false
-#     delete  = false
-#     update  = false
-#     process = false
-#     tag     = false
-#     filter  = false
-#   }
-# }
+  permissions {
+    read    = true
+    list    = true
+    write   = false
+    add     = false
+    create  = false
+    delete  = false
+    update  = false
+    process = false
+    tag     = false
+    filter  = false
+  }
+}
 
-# # Create an Azure Automation Python 3 package for the cryptography library used by the certificate renewal runbook, with content sourced from the storage account blob.
+# Create an Azure Automation Python 3 package for the cryptography library used by the certificate renewal runbook, with content sourced from the storage account blob.
 
-# resource "azurerm_automation_python3_package" "cryptography" {
-#   name                    = "cryptography"
-#   resource_group_name     = azurerm_resource_group.this.name
-#   automation_account_name = azurerm_automation_account.certificate_renewal.name
-#   content_uri             = "${module.storage_account.storage_blob_urls["${var.storage_container_name}/${var.storage_blob_name}"]}?${data.azurerm_storage_account_sas.automation_packages.sas}"
-#   tags                    = var.tags
+resource "azurerm_automation_python3_package" "cryptography" {
+  name                    = "cryptography"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal.name
+  content_uri             = "${module.storage_account.storage_blob_urls["${var.storage_container_name}/${var.storage_blob_name}"]}?${data.azurerm_storage_account_sas.automation_packages.sas}"
+  tags                    = var.tags
 
-#   lifecycle {
-#     ignore_changes = [content_uri]
-#   }
-# }
+  lifecycle {
+    ignore_changes = [content_uri]
+  }
+}
 
 # # Creating policy to allow certificate issuance from Vault PKI secrets engine for workloads authenticated with AppRole. 
 
@@ -417,19 +417,19 @@ resource "azurerm_application_gateway" "this" {
 #   override_special = "!@#%^*-_=+"
 # }
 
-# # Create the Azure Automation account that runs the renewal workflow.
+# Create the Azure Automation account that runs the renewal workflow.
 
-# resource "azurerm_automation_account" "certificate_renewal" {
-#   name                = var.azure_automation_account_name
-#   location            = azurerm_resource_group.this.location
-#   resource_group_name = azurerm_resource_group.this.name
-#   sku_name            = "Basic"
-#   tags                = var.tags
+resource "azurerm_automation_account" "certificate_renewal" {
+  name                = var.azure_automation_account_name
+  location            = azurerm_resource_group.this.location
+  resource_group_name = azurerm_resource_group.this.name
+  sku_name            = "Basic"
+  tags                = var.tags
 
-#   identity {
-#     type = "SystemAssigned"
-#   }
-# }
+  identity {
+    type = "SystemAssigned"
+  }
+}
 
 # # Upload the runbook that issues and imports certificates.
 

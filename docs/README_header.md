@@ -24,6 +24,15 @@ This Terraform project provisions a focused Azure stack that renews a TLS certif
 - Azure Automation Account, schedule, and Python runbook for renewal.
 - Runbook script at `scripts/automation_runbook.py`.
 
+### Prerequisites
+
+- A reachable Vault cluster with the PKI secrets engine enabled and a role configured for certificate issuance.
+- A Vault policy that allows HCP Terraform (JWT/OIDC) to manage AppRole, policies, and PKI role/issuance paths used by this demo.
+
+### Current Networking Scope
+
+This demo provisions all Azure resources with public access only. There are no private endpoints or private connectivity paths. Adding private networking is a planned enhancement for a future release.
+
 ## How This Demo Works
 
 1. Terraform provisions Azure resources plus Vault policy and AppRole wiring.

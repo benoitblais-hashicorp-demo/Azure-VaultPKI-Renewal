@@ -67,16 +67,16 @@ module "keyvault" {
         storage_permissions     = []
       }
     ],
-    # [
-    #   {
-    #     tenant_id               = data.azurerm_client_config.current.tenant_id
-    #     object_id               = azurerm_automation_account.certificate_renewal.identity[0].principal_id
-    #     certificate_permissions = ["Create", "Get", "Import", "List", "Update"]
-    #     key_permissions         = []
-    #     secret_permissions      = ["Get", "List", "Set"]
-    #     storage_permissions     = []
-    #   }
-    # ]
+    [
+      {
+        tenant_id               = data.azurerm_client_config.current.tenant_id
+        object_id               = azurerm_automation_account.certificate_renewal.identity[0].principal_id
+        certificate_permissions = ["Create", "Get", "Import", "List", "Update"]
+        key_permissions         = []
+        secret_permissions      = ["Get", "List", "Set"]
+        storage_permissions     = []
+      }
+    ]
   )
 
   network_acls = {
@@ -97,7 +97,7 @@ resource "azurerm_key_vault_certificate" "bootstrap" {
 
   certificate_policy {
     issuer_parameters {
-      name = "Unknown"
+      name = "Self"
     }
 
     lifetime_action {
@@ -252,9 +252,7 @@ resource "azurerm_application_gateway" "this" {
     ignore_changes = [ssl_certificate]
   }
 
-  depends_on = [
-    azurerm_key_vault_certificate.bootstrap
-  ]
+  depends_on = [module.keyvault]
 }
 
 

@@ -261,7 +261,7 @@ resource "azurerm_application_gateway" "this" {
 
 module "storage_account" {
   source  = "app.terraform.io/benoitblais-hashicorp/storage-account/azurerm"
-  version = "0.0.4"
+  version = "0.0.5"
 
   name                              = trimspace(var.storage_account_name) != "" ? var.storage_account_name : substr("st${replace(lower(var.resource_suffix), "-", "")}", 0, 24)
   resource_group_name               = azurerm_resource_group.this.name

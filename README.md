@@ -218,7 +218,7 @@ Version: 0.0.1
 
 Source: app.terraform.io/benoitblais-hashicorp/storage-account/azurerm
 
-Version: 0.0.4
+Version: 0.0.5
 
 ## Required Inputs
 

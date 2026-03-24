@@ -342,9 +342,9 @@ resource "azurerm_automation_python3_package" "cryptography" {
   content_uri             = "${module.storage_account.storage_blob_urls["${var.storage_container_name}/${var.storage_blob_name}"]}?${data.azurerm_storage_account_sas.automation_packages.sas}"
   tags                    = var.tags
 
-  lifecycle {
-    ignore_changes = [content_uri]
-  }
+  # lifecycle {
+  #   ignore_changes = [content_uri]
+  # }
 }
 
 # Creating policy to allow certificate issuance from Vault PKI secrets engine for workloads authenticated with AppRole. 

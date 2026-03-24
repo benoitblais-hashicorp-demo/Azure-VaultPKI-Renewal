@@ -630,10 +630,10 @@ resource "azurerm_application_gateway" "this" {
 #   depends_on = [module.keyvault]
 # }
 
-# # Allow Automation to update Application Gateway.
+# Allow Automation to update Application Gateway.
 
-# resource "azurerm_role_assignment" "automation_app_gateway_update" {
-#   scope                = azurerm_resource_group.this.id
-#   role_definition_name = "Network Contributor"
-#   principal_id         = azurerm_automation_account.certificate_renewal.identity[0].principal_id
-# }
+resource "azurerm_role_assignment" "automation_app_gateway_update" {
+  scope                = azurerm_resource_group.this.id
+  role_definition_name = "Network Contributor"
+  principal_id         = azurerm_automation_account.certificate_renewal.identity[0].principal_id
+}

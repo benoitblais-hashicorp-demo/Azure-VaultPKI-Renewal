@@ -67,16 +67,16 @@ module "keyvault" {
         storage_permissions     = []
       }
     ],
-    [
-      {
-        tenant_id               = data.azurerm_client_config.current.tenant_id
-        object_id               = azurerm_automation_account.certificate_renewal.identity[0].principal_id
-        certificate_permissions = ["Create", "Get", "Import", "List", "Update"]
-        key_permissions         = []
-        secret_permissions      = ["Get", "List", "Set"]
-        storage_permissions     = []
-      }
-    ]
+    # [
+    #   {
+    #     tenant_id               = data.azurerm_client_config.current.tenant_id
+    #     object_id               = azurerm_automation_account.certificate_renewal.identity[0].principal_id
+    #     certificate_permissions = ["Create", "Get", "Import", "List", "Update"]
+    #     key_permissions         = []
+    #     secret_permissions      = ["Get", "List", "Set"]
+    #     storage_permissions     = []
+    #   }
+    # ]
   )
 
   network_acls = {
@@ -630,10 +630,10 @@ resource "azurerm_application_gateway" "this" {
 #   depends_on = [module.keyvault]
 # }
 
-# Allow Automation to update Application Gateway.
+# # Allow Automation to update Application Gateway.
 
-resource "azurerm_role_assignment" "automation_app_gateway_update" {
-  scope                = azurerm_resource_group.this.id
-  role_definition_name = "Network Contributor"
-  principal_id         = azurerm_automation_account.certificate_renewal.identity[0].principal_id
-}
+# resource "azurerm_role_assignment" "automation_app_gateway_update" {
+#   scope                = azurerm_resource_group.this.id
+#   role_definition_name = "Network Contributor"
+#   principal_id         = azurerm_automation_account.certificate_renewal.identity[0].principal_id
+# }

@@ -431,17 +431,31 @@ resource "azurerm_automation_account" "certificate_renewal" {
   }
 }
 
+# Create a Python runtime environment required by Automation runbooks.
+
+resource "azurerm_automation_runtime_environment" "certificate_renewal" {
+  name                  = var.azure_automation_runtime_environment_name
+  automation_account_id = azurerm_automation_account.certificate_renewal.id
+  runtime_language      = "Python"
+  runtime_version       = var.azure_automation_runtime_environment_version
+
+  location    = azurerm_resource_group.this.location
+  description = "Python runtime for certificate renewal runbooks"
+  tags        = var.tags
+}
+
 # Upload the runbook that issues and imports certificates.
 
 resource "azurerm_automation_runbook" "certificate_renewal" {
-  name                    = var.azure_automation_runbook_name
-  location                = azurerm_resource_group.this.location
-  resource_group_name     = azurerm_resource_group.this.name
-  automation_account_name = azurerm_automation_account.certificate_renewal.name
-  log_progress            = true
-  log_verbose             = var.azure_automation_runbook_log_verbose
-  runbook_type            = "Python"
-  content                 = file("${path.module}/scripts/automation_runbook.py")
+  name                     = var.azure_automation_runbook_name
+  location                 = azurerm_resource_group.this.location
+  resource_group_name      = azurerm_resource_group.this.name
+  automation_account_name  = azurerm_automation_account.certificate_renewal.name
+  log_progress             = true
+  log_verbose              = var.azure_automation_runbook_log_verbose
+  runbook_type             = "Python"
+  runtime_environment_name = azurerm_automation_runtime_environment.certificate_renewal.name
+  content                  = file("${path.module}/scripts/automation_runbook.py")
 }
 
 # Configure certificate request inputs for the runbook.

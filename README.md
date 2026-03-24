@@ -488,6 +488,22 @@ Type: `bool`
 
 Default: `true`
 
+### <a name="input_azure_automation_runtime_environment_name"></a> [azure\_automation\_runtime\_environment\_name](#input\_azure\_automation\_runtime\_environment\_name)
+
+Description: (Optional) Azure Automation runtime environment name for Python runbooks.
+
+Type: `string`
+
+Default: `"python"`
+
+### <a name="input_azure_automation_runtime_environment_version"></a> [azure\_automation\_runtime\_environment\_version](#input\_azure\_automation\_runtime\_environment\_version)
+
+Description: (Optional) Azure Automation runtime environment version for Python runbooks.
+
+Type: `string`
+
+Default: `"3.8"`
+
 ### <a name="input_azure_automation_schedule_interval_hours"></a> [azure\_automation\_schedule\_interval\_hours](#input\_azure\_automation\_schedule\_interval\_hours)
 
 Description: (Optional) Hour interval for Azure Automation schedule recurrence.
@@ -784,6 +800,7 @@ The following resources are used by this module:
 - [azurerm_automation_job_schedule.certificate_renewal_once](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_job_schedule) (resource)
 - [azurerm_automation_python3_package.cryptography](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_python3_package) (resource)
 - [azurerm_automation_runbook.certificate_renewal](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_runbook) (resource)
+- [azurerm_automation_runtime_environment.certificate_renewal](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_runtime_environment) (resource)
 - [azurerm_automation_schedule.certificate_renewal](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_schedule) (resource)
 - [azurerm_automation_schedule.certificate_renewal_once](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_schedule) (resource)
 - [azurerm_automation_variable_string.app_gateway_name](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)

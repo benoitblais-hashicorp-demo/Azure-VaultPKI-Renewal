@@ -257,6 +257,7 @@ resource "azurerm_application_gateway" "this" {
   ]
 }
 
+
 # # Use the storage account module to create a storage account for hosting Python packages used by the automation runbook for certificate renewal.
 # # The module also creates a blob container and uploads the specified Python package wheel file.
 

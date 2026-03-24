@@ -25,6 +25,15 @@ This Terraform project provisions a focused Azure stack that renews a TLS certif
 - Azure Automation Account, schedule, and Python runbook for renewal.
 - Runbook script at `scripts/automation_runbook.py`.
 
+### Prerequisites
+
+- A reachable Vault cluster with the PKI secrets engine enabled and a role configured for certificate issuance.
+- A Vault policy that allows HCP Terraform (JWT/OIDC) to manage AppRole, policies, and PKI role/issuance paths used by this demo.
+
+### Current Networking Scope
+
+This demo provisions all Azure resources with public access only. There are no private endpoints or private connectivity paths. Adding private networking is a planned enhancement for a future release.
+
 ## How This Demo Works
 
 1. Terraform provisions Azure resources plus Vault policy and AppRole wiring.
@@ -204,6 +213,12 @@ The following Modules are called:
 Source: app.terraform.io/benoitblais-hashicorp/keyvault/azurerm
 
 Version: 0.0.1
+
+### <a name="module_storage_account"></a> [storage\_account](#module\_storage\_account)
+
+Source: app.terraform.io/benoitblais-hashicorp/storage-account/azurerm
+
+Version: 0.0.5
 
 ## Required Inputs
 
@@ -744,6 +759,8 @@ Default:
 The following resources are used by this module:
 
 - [azurerm_application_gateway.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/application_gateway) (resource)
+- [azurerm_automation_account.certificate_renewal](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_account) (resource)
+- [azurerm_automation_python3_package.cryptography](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_python3_package) (resource)
 - [azurerm_key_vault_certificate.bootstrap](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_certificate) (resource)
 - [azurerm_public_ip.app_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
@@ -751,6 +768,7 @@ The following resources are used by this module:
 - [azurerm_user_assigned_identity.app_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
 - [azurerm_virtual_network.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
 - [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
+- [azurerm_storage_account_sas.automation_packages](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/storage_account_sas) (data source)
 
 ## Outputs
 

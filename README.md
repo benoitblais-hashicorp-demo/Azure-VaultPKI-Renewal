@@ -25,14 +25,14 @@ This Terraform project provisions a focused Azure stack that renews a TLS certif
 - Azure Automation Account, schedule, and Python runbook for renewal.
 - Runbook script at `scripts/automation_runbook.py`.
 
+### Current Networking Scope
+
+This demo provisions all Azure resources with public access only. There are no private endpoints or private connectivity paths. Adding private networking is a planned enhancement for a future release.
+
 ### Prerequisites
 
 - A reachable Vault cluster with the PKI secrets engine enabled and a role configured for certificate issuance.
 - A Vault policy that allows HCP Terraform (JWT/OIDC) to manage AppRole, policies, and PKI role/issuance paths used by this demo.
-
-### Current Networking Scope
-
-This demo provisions all Azure resources with public access only. There are no private endpoints or private connectivity paths. Adding private networking is a planned enhancement for a future release.
 
 ## How This Demo Works
 
@@ -40,10 +40,6 @@ This demo provisions all Azure resources with public access only. There are no p
 2. The runbook runs hourly and requests a certificate from Vault PKI.
 3. The runbook imports the new certificate into Key Vault under a stable name.
 4. Application Gateway continues to reference the Key Vault certificate and serves HTTPS.
-
-### Run Once Immediately (No 1-Hour Wait)
-
-Trigger the Azure Automation runbook manually once so the initial bootstrap certificate is imported immediately.
 
 ## Demo Value Proposition
 
@@ -468,6 +464,30 @@ Type: `string`
 
 Default: `"renew-certificate"`
 
+### <a name="input_azure_automation_runbook_run_once_delay_minutes"></a> [azure\_automation\_runbook\_run\_once\_delay\_minutes](#input\_azure\_automation\_runbook\_run\_once\_delay\_minutes)
+
+Description: (Optional) Delay in minutes before the one-time runbook schedule starts.
+
+Type: `number`
+
+Default: `5`
+
+### <a name="input_azure_automation_runbook_run_once_schedule_name"></a> [azure\_automation\_runbook\_run\_once\_schedule\_name](#input\_azure\_automation\_runbook\_run\_once\_schedule\_name)
+
+Description: (Optional) One-time runbook schedule name.
+
+Type: `string`
+
+Default: `"renew-certificate-run-once"`
+
+### <a name="input_azure_automation_runbook_trigger_once"></a> [azure\_automation\_runbook\_trigger\_once](#input\_azure\_automation\_runbook\_trigger\_once)
+
+Description: (Optional) Whether to trigger the runbook once shortly after provisioning.
+
+Type: `bool`
+
+Default: `true`
+
 ### <a name="input_azure_automation_schedule_interval_hours"></a> [azure\_automation\_schedule\_interval\_hours](#input\_azure\_automation\_schedule\_interval\_hours)
 
 Description: (Optional) Hour interval for Azure Automation schedule recurrence.
@@ -760,10 +780,33 @@ The following resources are used by this module:
 
 - [azurerm_application_gateway.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/application_gateway) (resource)
 - [azurerm_automation_account.certificate_renewal](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_account) (resource)
+- [azurerm_automation_job_schedule.certificate_renewal](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_job_schedule) (resource)
+- [azurerm_automation_job_schedule.certificate_renewal_once](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_job_schedule) (resource)
 - [azurerm_automation_python3_package.cryptography](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_python3_package) (resource)
+- [azurerm_automation_runbook.certificate_renewal](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_runbook) (resource)
+- [azurerm_automation_schedule.certificate_renewal](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_schedule) (resource)
+- [azurerm_automation_schedule.certificate_renewal_once](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_schedule) (resource)
+- [azurerm_automation_variable_string.app_gateway_name](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.app_gateway_resource_group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.app_gateway_ssl_cert_name](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.cert_common_name](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.cert_ttl](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.key_vault_cert_name](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.key_vault_name](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.pfx_password](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.subscription_id](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.vault_addr](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.vault_approle_role_id](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.vault_approle_secret_id](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.vault_auth_path](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.vault_namespace](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.vault_pki_path](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.vault_pki_role](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
+- [azurerm_automation_variable_string.vault_tls_skip_verify](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
 - [azurerm_key_vault_certificate.bootstrap](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_certificate) (resource)
 - [azurerm_public_ip.app_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [azurerm_role_assignment.automation_app_gateway_update](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
 - [azurerm_subnet.app_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_user_assigned_identity.app_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
 - [azurerm_virtual_network.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)

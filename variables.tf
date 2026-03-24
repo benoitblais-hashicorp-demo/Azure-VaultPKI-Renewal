@@ -303,6 +303,28 @@ variable "azure_automation_account_name" {
   }
 }
 
+variable "azure_automation_runtime_environment_name" {
+  type        = string
+  description = "(Optional) Azure Automation runtime environment name for Python runbooks."
+  default     = "python"
+
+  validation {
+    condition     = trimspace(var.azure_automation_runtime_environment_name) != ""
+    error_message = "`azure_automation_runtime_environment_name` must not be empty."
+  }
+}
+
+variable "azure_automation_runtime_environment_version" {
+  type        = string
+  description = "(Optional) Azure Automation runtime environment version for Python runbooks."
+  default     = "3.8"
+
+  validation {
+    condition     = trimspace(var.azure_automation_runtime_environment_version) != ""
+    error_message = "`azure_automation_runtime_environment_version` must not be empty."
+  }
+}
+
 variable "azure_automation_runbook_log_verbose" {
   type        = bool
   description = "(Optional) When true, enables verbose logging on the Azure Automation runbook."

@@ -638,7 +638,7 @@ Description: (Optional) Package blob name stored in the container.
 
 Type: `string`
 
-Default: `"cryptography-3.2.1-cp38-cp38-win_amd64.whl"`
+Default: `"cryptography-41.0.7-cp38-cp38-win_amd64.whl"`
 
 ### <a name="input_storage_blob_parallelism"></a> [storage\_blob\_parallelism](#input\_storage\_blob\_parallelism)
 
@@ -654,7 +654,7 @@ Description: (Optional) Local path to the package blob source file.
 
 Type: `string`
 
-Default: `"./packages/cryptography-3.2.1-cp38-cp38-win_amd64.whl"`
+Default: `"./packages/cryptography-41.0.7-cp38-cp38-win_amd64.whl"`
 
 ### <a name="input_storage_blob_type"></a> [storage\_blob\_type](#input\_storage\_blob\_type)
 

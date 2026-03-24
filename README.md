@@ -106,11 +106,19 @@ You can configure this method in either of the following ways:
   - `ARM_TENANT_ID`
   - `ARM_CLIENT_ID`
   - `ARM_CLIENT_SECRET`
+<<<<<<< v0.0.10
 
 #### Managed Service Identity
 
 Use Managed Identity when Terraform runs on Azure-hosted compute (for example, Azure VM, VMSS, App Service, AKS).
 
+=======
+
+#### Managed Service Identity
+
+Use Managed Identity when Terraform runs on Azure-hosted compute (for example, Azure VM, VMSS, App Service, AKS).
+
+>>>>>>> main
 - **Inside the provider block**
 
   ```hcl
@@ -148,10 +156,17 @@ This method uses workload identity (JWT/OIDC) to generate short-lived Vault toke
 
 Use environment variables to authenticate with a static Vault token:
 
+<<<<<<< v0.0.10
 - **TFC\_VAULT\_PROVIDER\_AUTH**: Set the `TFC_VAULT_PROVIDER_AUTH` environment variable to `true`.
 - **TFC\_VAULT\_ADDR**: Set the `TFC_VAULT_ADDR` environment variable to your Vault server address (for example `https://vault.example.com:8200`).
 - **TFC\_VAULT\_NAMESPACE**: (Optional) Set the `TFC_VAULT_NAMESPACE` environment variable to the parent namespace where the module will create the sub-namespace (for example `admin`). If not set, the namespace will be created at the root level.
 - **TFC\_VAULT\_RUN\_ROLE**: Set the `TFC_VAULT_RUN_ROLE` environment variable to the JWT role name configured in Vault (for example `hcp-terraform`).
+=======
+- **TFC\\_VAULT\\_PROVIDER\\_AUTH**: Set the `TFC_VAULT_PROVIDER_AUTH` environment variable to `true`.
+- **TFC\\_VAULT\\_ADDR**: Set the `TFC_VAULT_ADDR` environment variable to your Vault server address (e.g., `https://vault.example.com:8200`)
+- **TFC\\_VAULT\\_NAMESPACE**: (Optional) Set the `TFC_VAULT_NAMESPACE` environment variable to the parent namespace where the module will create the sub-namespace (e.g., `admin`). If not set, the namespace will be created at the root level.
+- **TFC\\_VAULT\\_RUN\\_ROLE**: Set the `TFC_VAULT_RUN_ROLE` environment variable to the JWT role name configured in Vault (e.g., `hcp-terraform`)
+>>>>>>> main
 
 **Documentation:**
 
@@ -164,13 +179,22 @@ The Azure Automation runbook authenticates to Vault using AppRole credentials pa
 
 **Required automation variables:**
 
+<<<<<<< v0.0.10
 - **VAULT\_ADDR**: Vault address (for example `https://vault.example.com:8200`)
+=======
+- **VAULT\_ADDR**: Vault address (e.g., `https://vault.example.com:8200`)
+>>>>>>> main
 - **VAULT\_NAMESPACE**: Vault namespace (if applicable)
 - **VAULT\_AUTH\_PATH**: AppRole auth mount path (default: `approle`)
 - **VAULT\_APPROLE\_ROLE\_ID**: AppRole role ID
 - **VAULT\_APPROLE\_SECRET\_ID**: AppRole secret ID
+<<<<<<< v0.0.10
 - **VAULT\_PKI\_PATH**: PKI mount path (for example `pki-int`)
 - **VAULT\_PKI\_ROLE**: PKI role name (for example `gw-cert-issuer`)
+=======
+- **VAULT\_PKI\_PATH**: PKI mount path (e.g., `pki-int`)
+- **VAULT\_PKI\_ROLE**: PKI role name (e.g., `gw-cert-issuer`)
+>>>>>>> main
 
 ## Demo Cleanup Note
 

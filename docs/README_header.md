@@ -24,14 +24,14 @@ This Terraform project provisions a focused Azure stack that renews a TLS certif
 - Azure Automation Account, schedule, and Python runbook for renewal.
 - Runbook script at `scripts/automation_runbook.py`.
 
+### Current Networking Scope
+
+This demo provisions all Azure resources with public access only. There are no private endpoints or private connectivity paths. Adding private networking is a planned enhancement for a future release.
+
 ### Prerequisites
 
 - A reachable Vault cluster with the PKI secrets engine enabled and a role configured for certificate issuance.
 - A Vault policy that allows HCP Terraform (JWT/OIDC) to manage AppRole, policies, and PKI role/issuance paths used by this demo.
-
-### Current Networking Scope
-
-This demo provisions all Azure resources with public access only. There are no private endpoints or private connectivity paths. Adding private networking is a planned enhancement for a future release.
 
 ## How This Demo Works
 
@@ -39,10 +39,6 @@ This demo provisions all Azure resources with public access only. There are no p
 2. The runbook runs hourly and requests a certificate from Vault PKI.
 3. The runbook imports the new certificate into Key Vault under a stable name.
 4. Application Gateway continues to reference the Key Vault certificate and serves HTTPS.
-
-### Run Once Immediately (No 1-Hour Wait)
-
-Trigger the Azure Automation runbook manually once so the initial bootstrap certificate is imported immediately.
 
 ## Demo Value Proposition
 

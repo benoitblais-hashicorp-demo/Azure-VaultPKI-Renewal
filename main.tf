@@ -97,7 +97,7 @@ resource "azurerm_key_vault_certificate" "bootstrap" {
 
   certificate_policy {
     issuer_parameters {
-      name = "Unknown"
+      name = "Self"
     }
 
     lifetime_action {
@@ -252,9 +252,7 @@ resource "azurerm_application_gateway" "this" {
     ignore_changes = [ssl_certificate]
   }
 
-  depends_on = [
-    azurerm_key_vault_certificate.bootstrap
-  ]
+  depends_on = [module.keyvault]
 }
 
 

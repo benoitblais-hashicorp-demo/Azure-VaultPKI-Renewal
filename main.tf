@@ -347,75 +347,75 @@ resource "azurerm_automation_python3_package" "cryptography" {
   }
 }
 
-# # Creating policy to allow certificate issuance from Vault PKI secrets engine for workloads authenticated with AppRole. 
+# Creating policy to allow certificate issuance from Vault PKI secrets engine for workloads authenticated with AppRole. 
 
-# resource "vault_policy" "workload_pki_issue" {
-#   name = var.vault_policy_name
+resource "vault_policy" "workload_pki_issue" {
+  name = var.vault_policy_name
 
-#   policy = <<EOT
-# path "${var.vault_pki_path}/issue/${var.vault_pki_role}" {
-#   capabilities = ["create", "update"]
-# }
-# EOT
-# }
+  policy = <<EOT
+path "${var.vault_pki_path}/issue/${var.vault_pki_role}" {
+  capabilities = ["create", "update"]
+}
+EOT
+}
 
-# # Enable AppRole auth method for workload authentication to Vault.
+# Enable AppRole auth method for workload authentication to Vault.
 
-# resource "vault_auth_backend" "approle" {
-#   type = "approle"
-#   path = "approle"
-# }
+resource "vault_auth_backend" "approle" {
+  type = "approle"
+  path = "approle"
+}
 
-# # Create AppRole with permissions to request certificate issuance from Vault PKI secrets engine.
+# Create AppRole with permissions to request certificate issuance from Vault PKI secrets engine.
 
-# resource "vault_approle_auth_backend_role" "workload" {
-#   backend                 = vault_auth_backend.approle.path
-#   role_name               = var.vault_approle_role_name
-#   bind_secret_id          = true
-#   secret_id_num_uses      = 0
-#   secret_id_ttl           = 0
-#   token_num_uses          = 0
-#   token_ttl               = var.vault_approle_token_ttl
-#   token_max_ttl           = var.vault_approle_token_max_ttl
-#   token_explicit_max_ttl  = 0
-#   token_period            = 0
-#   token_no_default_policy = false
-#   token_type              = "default"
-#   token_policies          = [vault_policy.workload_pki_issue.name]
-# }
+resource "vault_approle_auth_backend_role" "workload" {
+  backend                 = vault_auth_backend.approle.path
+  role_name               = var.vault_approle_role_name
+  bind_secret_id          = true
+  secret_id_num_uses      = 0
+  secret_id_ttl           = 0
+  token_num_uses          = 0
+  token_ttl               = var.vault_approle_token_ttl
+  token_max_ttl           = var.vault_approle_token_max_ttl
+  token_explicit_max_ttl  = 0
+  token_period            = 0
+  token_no_default_policy = false
+  token_type              = "default"
+  token_policies          = [vault_policy.workload_pki_issue.name]
+}
 
-# # Create AppRole secret ID for workload authentication.
+# Create AppRole secret ID for workload authentication.
 
-# resource "vault_approle_auth_backend_role_secret_id" "workload" {
-#   backend   = vault_auth_backend.approle.path
-#   role_name = vault_approle_auth_backend_role.workload.role_name
-#   metadata  = jsonencode({})
-#   num_uses  = 0
-#   ttl       = 0
-# }
+resource "vault_approle_auth_backend_role_secret_id" "workload" {
+  backend   = vault_auth_backend.approle.path
+  role_name = vault_approle_auth_backend_role.workload.role_name
+  metadata  = jsonencode({})
+  num_uses  = 0
+  ttl       = 0
+}
 
-# # Create Vault PKI secret backend role for certificate issuance by automation.
+# Create Vault PKI secret backend role for certificate issuance by automation.
 
-# resource "vault_pki_secret_backend_role" "bootstrap" {
-#   backend        = var.vault_pki_path
-#   name           = var.vault_pki_role
-#   allow_any_name = true
-#   max_ttl        = var.vault_pki_role_max_ttl
-# }
+resource "vault_pki_secret_backend_role" "bootstrap" {
+  backend        = var.vault_pki_path
+  name           = var.vault_pki_role
+  allow_any_name = true
+  max_ttl        = var.vault_pki_role_max_ttl
+}
 
-# # Compute the Vault auth path used by the runbook when no token is provided.
+# Compute the Vault auth path used by the runbook when no token is provided.
 
-# locals {
-#   automation_vault_auth_path = trimspace(var.azure_automation_vault_auth_path) != "" ? var.azure_automation_vault_auth_path : "approle"
-# }
+locals {
+  automation_vault_auth_path = trimspace(var.azure_automation_vault_auth_path) != "" ? var.azure_automation_vault_auth_path : "approle"
+}
 
-# # Generate a stable PFX password for the runbook.
+# Generate a stable PFX password for the runbook.
 
-# resource "random_password" "bootstrap_pfx_password" {
-#   length           = 32
-#   special          = true
-#   override_special = "!@#%^*-_=+"
-# }
+resource "random_password" "bootstrap_pfx_password" {
+  length           = 32
+  special          = true
+  override_special = "!@#%^*-_=+"
+}
 
 # Create the Azure Automation account that runs the renewal workflow.
 

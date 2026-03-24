@@ -512,7 +512,7 @@ variable "storage_blob_last_access_time_enabled" {
 variable "storage_blob_name" {
   type        = string
   description = "(Optional) Package blob name stored in the container."
-  default     = "cryptography-41.0.7-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
+  default     = "cryptography-3.2.1-cp38-cp38-win_amd64.whl"
 
   validation {
     condition     = trimspace(var.storage_blob_name) != ""
@@ -534,7 +534,7 @@ variable "storage_blob_parallelism" {
 variable "storage_blob_source" {
   type        = string
   description = "(Optional) Local path to the package blob source file."
-  default     = "./packages/cryptography-41.0.7-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
+  default     = "./packages/cryptography-3.2.1-cp38-cp38-win_amd64.whl"
 
   validation {
     condition     = trimspace(var.storage_blob_source) != ""

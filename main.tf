@@ -441,7 +441,6 @@ resource "azurerm_automation_runbook" "certificate_renewal" {
   log_progress             = true
   log_verbose              = var.azure_automation_runbook_log_verbose
   runbook_type             = "Python"
-  runtime_environment_name = "Python"
   content                  = file("${path.module}/scripts/automation_runbook.py")
 }
 

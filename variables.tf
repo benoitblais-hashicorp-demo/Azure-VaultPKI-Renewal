@@ -323,11 +323,11 @@ variable "azure_automation_runbook_name" {
 variable "azure_automation_runbook_run_once_delay_minutes" {
   type        = number
   description = "(Optional) Delay in minutes before the one-time runbook schedule starts."
-  default     = 5
+  default     = 10
 
   validation {
-    condition     = var.azure_automation_runbook_run_once_delay_minutes >= 1 && var.azure_automation_runbook_run_once_delay_minutes <= 60
-    error_message = "`azure_automation_runbook_run_once_delay_minutes` must be between 1 and 60."
+    condition     = var.azure_automation_runbook_run_once_delay_minutes >= 6 && var.azure_automation_runbook_run_once_delay_minutes <= 60
+    error_message = "`azure_automation_runbook_run_once_delay_minutes` must be between 6 and 60."
   }
 }
 

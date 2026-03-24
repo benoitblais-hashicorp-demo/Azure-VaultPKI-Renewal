@@ -431,207 +431,236 @@ resource "azurerm_automation_account" "certificate_renewal" {
   }
 }
 
-# # Upload the runbook that issues and imports certificates.
+# Upload the runbook that issues and imports certificates.
 
-# resource "azurerm_automation_runbook" "certificate_renewal" {
-#   name                     = var.azure_automation_runbook_name
-#   location                 = azurerm_resource_group.this.location
-#   resource_group_name      = azurerm_resource_group.this.name
-#   automation_account_name  = azurerm_automation_account.certificate_renewal.name
-#   log_progress             = true
-#   log_verbose              = var.azure_automation_runbook_log_verbose
-#   runbook_type             = "Python"
-#   runtime_environment_name = "Python"
-#   content                  = file("${path.module}/scripts/automation_runbook.py")
-# }
+resource "azurerm_automation_runbook" "certificate_renewal" {
+  name                     = var.azure_automation_runbook_name
+  location                 = azurerm_resource_group.this.location
+  resource_group_name      = azurerm_resource_group.this.name
+  automation_account_name  = azurerm_automation_account.certificate_renewal.name
+  log_progress             = true
+  log_verbose              = var.azure_automation_runbook_log_verbose
+  runbook_type             = "Python"
+  runtime_environment_name = "Python"
+  content                  = file("${path.module}/scripts/automation_runbook.py")
+}
 
-# # Configure certificate request inputs for the runbook.
+# Configure certificate request inputs for the runbook.
 
-# resource "azurerm_automation_variable_string" "cert_common_name" {
-#   name                    = "CERT_COMMON_NAME"
-#   resource_group_name     = azurerm_resource_group.this.name
-#   automation_account_name = azurerm_automation_account.certificate_renewal.name
-#   value                   = var.initial_certificate_common_name
-# }
+resource "azurerm_automation_variable_string" "cert_common_name" {
+  name                    = "CERT_COMMON_NAME"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal.name
+  value                   = var.initial_certificate_common_name
+}
 
-# # Configure certificate TTL input for the runbook.
+# Configure certificate TTL input for the runbook.
 
-# resource "azurerm_automation_variable_string" "cert_ttl" {
-#   name                    = "CERT_TTL"
-#   resource_group_name     = azurerm_resource_group.this.name
-#   automation_account_name = azurerm_automation_account.certificate_renewal.name
-#   value                   = var.initial_certificate_ttl
-# }
+resource "azurerm_automation_variable_string" "cert_ttl" {
+  name                    = "CERT_TTL"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal.name
+  value                   = var.initial_certificate_ttl
+}
 
-# # Provide Key Vault certificate name to the runbook.
+# Provide Key Vault certificate name to the runbook.
 
-# resource "azurerm_automation_variable_string" "key_vault_cert_name" {
-#   name                    = "AZURE_KEYVAULT_CERT_NAME"
-#   resource_group_name     = azurerm_resource_group.this.name
-#   automation_account_name = azurerm_automation_account.certificate_renewal.name
-#   value                   = var.key_vault_certificate_name
-# }
+resource "azurerm_automation_variable_string" "key_vault_cert_name" {
+  name                    = "AZURE_KEYVAULT_CERT_NAME"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal.name
+  value                   = var.key_vault_certificate_name
+}
 
-# # Provide Key Vault name to the runbook.
+# Provide Key Vault name to the runbook.
 
-# resource "azurerm_automation_variable_string" "key_vault_name" {
-#   name                    = "AZURE_KEYVAULT_NAME"
-#   resource_group_name     = azurerm_resource_group.this.name
-#   automation_account_name = azurerm_automation_account.certificate_renewal.name
-#   value                   = module.keyvault.keyvault.name
-# }
+resource "azurerm_automation_variable_string" "key_vault_name" {
+  name                    = "AZURE_KEYVAULT_NAME"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal.name
+  value                   = module.keyvault.keyvault.name
+}
 
-# # Provide the PFX password used when importing the certificate.
+# Provide the PFX password used when importing the certificate.
 
-# resource "azurerm_automation_variable_string" "pfx_password" {
-#   name                    = "PFX_PASSWORD"
-#   resource_group_name     = azurerm_resource_group.this.name
-#   automation_account_name = azurerm_automation_account.certificate_renewal.name
-#   value                   = random_password.bootstrap_pfx_password.result
-#   encrypted               = true
-# }
+resource "azurerm_automation_variable_string" "pfx_password" {
+  name                    = "PFX_PASSWORD"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal.name
+  value                   = random_password.bootstrap_pfx_password.result
+  encrypted               = true
+}
 
-# # Provide Application Gateway name to the runbook.
+# Provide Application Gateway name to the runbook.
 
-# resource "azurerm_automation_variable_string" "app_gateway_name" {
-#   name                    = "AZURE_APP_GATEWAY_NAME"
-#   resource_group_name     = azurerm_resource_group.this.name
-#   automation_account_name = azurerm_automation_account.certificate_renewal.name
-#   value                   = azurerm_application_gateway.this.name
-# }
+resource "azurerm_automation_variable_string" "app_gateway_name" {
+  name                    = "AZURE_APP_GATEWAY_NAME"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal.name
+  value                   = azurerm_application_gateway.this.name
+}
 
-# # Provide Application Gateway resource group to the runbook.
+# Provide Application Gateway resource group to the runbook.
 
-# resource "azurerm_automation_variable_string" "app_gateway_resource_group" {
-#   name                    = "AZURE_APP_GATEWAY_RESOURCE_GROUP"
-#   resource_group_name     = azurerm_resource_group.this.name
-#   automation_account_name = azurerm_automation_account.certificate_renewal.name
-#   value                   = azurerm_resource_group.this.name
-# }
+resource "azurerm_automation_variable_string" "app_gateway_resource_group" {
+  name                    = "AZURE_APP_GATEWAY_RESOURCE_GROUP"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal.name
+  value                   = azurerm_resource_group.this.name
+}
 
-# # Provide Application Gateway SSL certificate name to the runbook.
+# Provide Application Gateway SSL certificate name to the runbook.
 
-# resource "azurerm_automation_variable_string" "app_gateway_ssl_cert_name" {
-#   name                    = "AZURE_APP_GATEWAY_SSL_CERT_NAME"
-#   resource_group_name     = azurerm_resource_group.this.name
-#   automation_account_name = azurerm_automation_account.certificate_renewal.name
-#   value                   = var.app_gateway_ssl_certificate_name
-# }
+resource "azurerm_automation_variable_string" "app_gateway_ssl_cert_name" {
+  name                    = "AZURE_APP_GATEWAY_SSL_CERT_NAME"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal.name
+  value                   = var.app_gateway_ssl_certificate_name
+}
 
-# # Provide subscription ID to the runbook.
+# Provide subscription ID to the runbook.
 
-# resource "azurerm_automation_variable_string" "subscription_id" {
-#   name                    = "AZURE_SUBSCRIPTION_ID"
-#   resource_group_name     = azurerm_resource_group.this.name
-#   automation_account_name = azurerm_automation_account.certificate_renewal.name
-#   value                   = var.subscription_id
-# }
+resource "azurerm_automation_variable_string" "subscription_id" {
+  name                    = "AZURE_SUBSCRIPTION_ID"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal.name
+  value                   = var.subscription_id
+}
 
-# # Provide Vault address to the runbook.
+# Provide Vault address to the runbook.
 
-# resource "azurerm_automation_variable_string" "vault_addr" {
-#   name                    = "VAULT_ADDR"
-#   resource_group_name     = azurerm_resource_group.this.name
-#   automation_account_name = azurerm_automation_account.certificate_renewal.name
-#   value                   = var.vault_addr
-# }
+resource "azurerm_automation_variable_string" "vault_addr" {
+  name                    = "VAULT_ADDR"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal.name
+  value                   = var.vault_addr
+}
 
-# # Provide Vault auth path override to the runbook.
+# Provide Vault auth path override to the runbook.
 
-# resource "azurerm_automation_variable_string" "vault_auth_path" {
-#   name                    = "VAULT_AUTH_PATH"
-#   resource_group_name     = azurerm_resource_group.this.name
-#   automation_account_name = azurerm_automation_account.certificate_renewal.name
-#   value                   = local.automation_vault_auth_path
-# }
+resource "azurerm_automation_variable_string" "vault_auth_path" {
+  name                    = "VAULT_AUTH_PATH"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal.name
+  value                   = local.automation_vault_auth_path
+}
 
-# # Provide Vault namespace to the runbook.
+# Provide Vault namespace to the runbook.
 
-# resource "azurerm_automation_variable_string" "vault_namespace" {
-#   name                    = "VAULT_NAMESPACE"
-#   resource_group_name     = azurerm_resource_group.this.name
-#   automation_account_name = azurerm_automation_account.certificate_renewal.name
-#   value                   = var.vault_namespace
-# }
+resource "azurerm_automation_variable_string" "vault_namespace" {
+  name                    = "VAULT_NAMESPACE"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal.name
+  value                   = var.vault_namespace
+}
 
-# # Provide Vault PKI mount path to the runbook.
+# Provide Vault PKI mount path to the runbook.
 
-# resource "azurerm_automation_variable_string" "vault_pki_path" {
-#   name                    = "VAULT_PKI_PATH"
-#   resource_group_name     = azurerm_resource_group.this.name
-#   automation_account_name = azurerm_automation_account.certificate_renewal.name
-#   value                   = var.vault_pki_path
-# }
+resource "azurerm_automation_variable_string" "vault_pki_path" {
+  name                    = "VAULT_PKI_PATH"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal.name
+  value                   = var.vault_pki_path
+}
 
-# # Provide Vault PKI role name to the runbook.
+# Provide Vault PKI role name to the runbook.
 
-# resource "azurerm_automation_variable_string" "vault_pki_role" {
-#   name                    = "VAULT_PKI_ROLE"
-#   resource_group_name     = azurerm_resource_group.this.name
-#   automation_account_name = azurerm_automation_account.certificate_renewal.name
-#   value                   = var.vault_pki_role
-# }
+resource "azurerm_automation_variable_string" "vault_pki_role" {
+  name                    = "VAULT_PKI_ROLE"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal.name
+  value                   = var.vault_pki_role
+}
 
-# # Provide Vault AppRole role ID to the runbook.
+# Provide Vault AppRole role ID to the runbook.
 
-# resource "azurerm_automation_variable_string" "vault_approle_role_id" {
-#   name                    = "VAULT_APPROLE_ROLE_ID"
-#   resource_group_name     = azurerm_resource_group.this.name
-#   automation_account_name = azurerm_automation_account.certificate_renewal.name
-#   value                   = vault_approle_auth_backend_role.workload.role_id
-# }
+resource "azurerm_automation_variable_string" "vault_approle_role_id" {
+  name                    = "VAULT_APPROLE_ROLE_ID"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal.name
+  value                   = vault_approle_auth_backend_role.workload.role_id
+}
 
-# # Provide Vault AppRole secret ID to the runbook.
+# Provide Vault AppRole secret ID to the runbook.
 
-# resource "azurerm_automation_variable_string" "vault_approle_secret_id" {
-#   name                    = "VAULT_APPROLE_SECRET_ID"
-#   resource_group_name     = azurerm_resource_group.this.name
-#   automation_account_name = azurerm_automation_account.certificate_renewal.name
-#   value                   = vault_approle_auth_backend_role_secret_id.workload.secret_id
-#   encrypted               = true
-# }
+resource "azurerm_automation_variable_string" "vault_approle_secret_id" {
+  name                    = "VAULT_APPROLE_SECRET_ID"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal.name
+  value                   = vault_approle_auth_backend_role_secret_id.workload.secret_id
+  encrypted               = true
+}
 
-# # Provide Vault TLS behavior to the runbook.
+# Provide Vault TLS behavior to the runbook.
 
-# resource "azurerm_automation_variable_string" "vault_tls_skip_verify" {
-#   name                    = "VAULT_TLS_SKIP_VERIFY"
-#   resource_group_name     = azurerm_resource_group.this.name
-#   automation_account_name = azurerm_automation_account.certificate_renewal.name
-#   value                   = "true"
-# }
+resource "azurerm_automation_variable_string" "vault_tls_skip_verify" {
+  name                    = "VAULT_TLS_SKIP_VERIFY"
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal.name
+  value                   = "true"
+}
 
-# # Schedule the runbook execution.
+# Schedule the runbook execution.
 
-# resource "azurerm_automation_schedule" "certificate_renewal" {
-#   name                    = var.azure_automation_schedule_name
-#   resource_group_name     = azurerm_resource_group.this.name
-#   automation_account_name = azurerm_automation_account.certificate_renewal.name
-#   frequency               = "Hour"
-#   interval                = var.azure_automation_schedule_interval_hours
-#   timezone                = var.azure_automation_schedule_timezone
-#   start_time              = timeadd(timestamp(), "10m")
-#   description             = "Hourly certificate renewal runbook schedule"
+resource "azurerm_automation_schedule" "certificate_renewal" {
+  name                    = var.azure_automation_schedule_name
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal.name
+  frequency               = "Hour"
+  interval                = var.azure_automation_schedule_interval_hours
+  timezone                = var.azure_automation_schedule_timezone
+  start_time              = timeadd(timestamp(), "10m")
+  description             = "Hourly certificate renewal runbook schedule"
 
-#   lifecycle {
-#     ignore_changes = [start_time]
-#   }
-# }
+  lifecycle {
+    ignore_changes = [start_time]
+  }
+}
 
-# # Link the runbook to the schedule.
+# Trigger the runbook once shortly after provisioning, when enabled.
 
-# resource "azurerm_automation_job_schedule" "certificate_renewal" {
-#   resource_group_name     = azurerm_resource_group.this.name
-#   automation_account_name = azurerm_automation_account.certificate_renewal.name
-#   schedule_name           = azurerm_automation_schedule.certificate_renewal.name
-#   runbook_name            = azurerm_automation_runbook.certificate_renewal.name
+resource "azurerm_automation_schedule" "certificate_renewal_once" {
+  count = var.azure_automation_runbook_trigger_once ? 1 : 0
 
-#   depends_on = [module.keyvault]
-# }
+  name                    = var.azure_automation_runbook_run_once_schedule_name
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal.name
+  frequency               = "OneTime"
+  timezone                = var.azure_automation_schedule_timezone
+  start_time              = timeadd(timestamp(), format("%dm", var.azure_automation_runbook_run_once_delay_minutes))
+  description             = "One-time certificate renewal runbook schedule"
 
-# # Allow Automation to update Application Gateway.
+  lifecycle {
+    ignore_changes = [start_time]
+  }
+}
 
-# resource "azurerm_role_assignment" "automation_app_gateway_update" {
-#   scope                = azurerm_resource_group.this.id
-#   role_definition_name = "Network Contributor"
-#   principal_id         = azurerm_automation_account.certificate_renewal.identity[0].principal_id
-# }
+# Link the runbook to the schedule.
+
+resource "azurerm_automation_job_schedule" "certificate_renewal" {
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal.name
+  schedule_name           = azurerm_automation_schedule.certificate_renewal.name
+  runbook_name            = azurerm_automation_runbook.certificate_renewal.name
+
+  depends_on = [module.keyvault]
+}
+
+resource "azurerm_automation_job_schedule" "certificate_renewal_once" {
+  count = var.azure_automation_runbook_trigger_once ? 1 : 0
+
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal.name
+  schedule_name           = azurerm_automation_schedule.certificate_renewal_once[0].name
+  runbook_name            = azurerm_automation_runbook.certificate_renewal.name
+
+  depends_on = [module.keyvault]
+}
+
+# Allow Automation to update Application Gateway.
+
+resource "azurerm_role_assignment" "automation_app_gateway_update" {
+  scope                = azurerm_resource_group.this.id
+  role_definition_name = "Network Contributor"
+  principal_id         = azurerm_automation_account.certificate_renewal.identity[0].principal_id
+}

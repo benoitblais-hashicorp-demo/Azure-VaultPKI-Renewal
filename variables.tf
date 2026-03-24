@@ -320,6 +320,34 @@ variable "azure_automation_runbook_name" {
   }
 }
 
+variable "azure_automation_runbook_run_once_delay_minutes" {
+  type        = number
+  description = "(Optional) Delay in minutes before the one-time runbook schedule starts."
+  default     = 5
+
+  validation {
+    condition     = var.azure_automation_runbook_run_once_delay_minutes >= 1 && var.azure_automation_runbook_run_once_delay_minutes <= 60
+    error_message = "`azure_automation_runbook_run_once_delay_minutes` must be between 1 and 60."
+  }
+}
+
+variable "azure_automation_runbook_run_once_schedule_name" {
+  type        = string
+  description = "(Optional) One-time runbook schedule name."
+  default     = "renew-certificate-run-once"
+
+  validation {
+    condition     = trimspace(var.azure_automation_runbook_run_once_schedule_name) != ""
+    error_message = "`azure_automation_runbook_run_once_schedule_name` must not be empty."
+  }
+}
+
+variable "azure_automation_runbook_trigger_once" {
+  type        = bool
+  description = "(Optional) Whether to trigger the runbook once shortly after provisioning."
+  default     = true
+}
+
 variable "azure_automation_schedule_interval_hours" {
   type        = number
   description = "(Optional) Hour interval for Azure Automation schedule recurrence."

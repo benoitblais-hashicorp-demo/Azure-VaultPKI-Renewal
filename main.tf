@@ -434,14 +434,14 @@ resource "azurerm_automation_account" "certificate_renewal" {
 # Upload the runbook that issues and imports certificates.
 
 resource "azurerm_automation_runbook" "certificate_renewal" {
-  name                     = var.azure_automation_runbook_name
-  location                 = azurerm_resource_group.this.location
-  resource_group_name      = azurerm_resource_group.this.name
-  automation_account_name  = azurerm_automation_account.certificate_renewal.name
-  log_progress             = true
-  log_verbose              = var.azure_automation_runbook_log_verbose
-  runbook_type             = "Python3"
-  content                  = file("${path.module}/scripts/automation_runbook.py")
+  name                    = var.azure_automation_runbook_name
+  location                = azurerm_resource_group.this.location
+  resource_group_name     = azurerm_resource_group.this.name
+  automation_account_name = azurerm_automation_account.certificate_renewal.name
+  log_progress            = true
+  log_verbose             = var.azure_automation_runbook_log_verbose
+  runbook_type            = "Python3"
+  content                 = file("${path.module}/scripts/automation_runbook.py")
 }
 
 # Configure certificate request inputs for the runbook.
@@ -661,5 +661,13 @@ resource "azurerm_automation_job_schedule" "certificate_renewal_once" {
 resource "azurerm_role_assignment" "automation_app_gateway_update" {
   scope                = azurerm_resource_group.this.id
   role_definition_name = "Network Contributor"
+  principal_id         = azurerm_automation_account.certificate_renewal.identity[0].principal_id
+}
+
+# Allow Automation to assign the Application Gateway user-assigned identity during updates.
+
+resource "azurerm_role_assignment" "automation_app_gateway_identity_assign" {
+  scope                = azurerm_user_assigned_identity.app_gateway.id
+  role_definition_name = "Managed Identity Operator"
   principal_id         = azurerm_automation_account.certificate_renewal.identity[0].principal_id
 }

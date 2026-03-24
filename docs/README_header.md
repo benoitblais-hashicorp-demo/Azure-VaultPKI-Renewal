@@ -166,6 +166,9 @@ Use environment variables to authenticate with a static Vault token:
 
 The Azure Automation runbook authenticates to Vault using AppRole credentials passed as automation variables.
 
+> We use AppRole here because Entra ID access is not available in this environment; if you can use Entra ID, Vault's Azure auth
+> method with workload identity federation (WIF) is a strong alternative.
+
 **Required automation variables:**
 
 - **VAULT_ADDR**: Vault address (for example `https://vault.example.com:8200`)

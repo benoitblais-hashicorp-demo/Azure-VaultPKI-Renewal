@@ -167,6 +167,9 @@ Use environment variables to authenticate with a static Vault token:
 
 The Azure Automation runbook authenticates to Vault using AppRole credentials passed as automation variables.
 
+> We use AppRole here because Entra ID access is not available in this environment; if you can use Entra ID, Vault's Azure auth
+> method with workload identity federation (WIF) is a strong alternative.
+
 **Required automation variables:**
 
 - **VAULT\_ADDR**: Vault address (for example `https://vault.example.com:8200`)
@@ -622,7 +625,7 @@ Description: (Optional) Package blob name stored in the container.
 
 Type: `string`
 
-Default: `"cryptography-41.0.7-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"`
+Default: `"cryptography-3.2.1-cp38-cp38-win_amd64.whl"`
 
 ### <a name="input_storage_blob_parallelism"></a> [storage\_blob\_parallelism](#input\_storage\_blob\_parallelism)
 
@@ -638,7 +641,7 @@ Description: (Optional) Local path to the package blob source file.
 
 Type: `string`
 
-Default: `"./packages/cryptography-41.0.7-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"`
+Default: `"./packages/cryptography-3.2.1-cp38-cp38-win_amd64.whl"`
 
 ### <a name="input_storage_blob_type"></a> [storage\_blob\_type](#input\_storage\_blob\_type)
 
@@ -806,6 +809,7 @@ The following resources are used by this module:
 - [azurerm_key_vault_certificate.bootstrap](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_certificate) (resource)
 - [azurerm_public_ip.app_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [azurerm_role_assignment.automation_app_gateway_identity_assign](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
 - [azurerm_role_assignment.automation_app_gateway_update](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
 - [azurerm_subnet.app_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_user_assigned_identity.app_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)

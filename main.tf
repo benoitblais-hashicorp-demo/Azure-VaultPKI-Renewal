@@ -67,16 +67,16 @@ module "keyvault" {
         storage_permissions     = []
       }
     ],
-    [
-      {
-        tenant_id               = data.azurerm_client_config.current.tenant_id
-        object_id               = azurerm_automation_account.certificate_renewal.identity[0].principal_id
-        certificate_permissions = ["Create", "Get", "Import", "List", "Update"]
-        key_permissions         = []
-        secret_permissions      = ["Get", "List", "Set"]
-        storage_permissions     = []
-      }
-    ]
+    # [
+    #   {
+    #     tenant_id               = data.azurerm_client_config.current.tenant_id
+    #     object_id               = azurerm_automation_account.certificate_renewal.identity[0].principal_id
+    #     certificate_permissions = ["Create", "Get", "Import", "List", "Update"]
+    #     key_permissions         = []
+    #     secret_permissions      = ["Get", "List", "Set"]
+    #     storage_permissions     = []
+    #   }
+    # ]
   )
 
   network_acls = {

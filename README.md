@@ -470,7 +470,7 @@ Description: (Optional) Delay in minutes before the one-time runbook schedule st
 
 Type: `number`
 
-Default: `5`
+Default: `10`
 
 ### <a name="input_azure_automation_runbook_run_once_schedule_name"></a> [azure\_automation\_runbook\_run\_once\_schedule\_name](#input\_azure\_automation\_runbook\_run\_once\_schedule\_name)
 

@@ -85,7 +85,7 @@ az role assignment create \
   --assignee-object-id "$UAMI_PRINCIPAL_ID" \
   --assignee-principal-type ServicePrincipal \
   --role "User Access Administrator" \
-  --scope "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RG_NAME"
+  --scope "/subscriptions/$SUBSCRIPTION_ID"
 ```
 
 ## 5) Create Linux VM and Attach UAMI

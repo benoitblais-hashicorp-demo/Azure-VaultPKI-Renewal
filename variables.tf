@@ -342,17 +342,6 @@ variable "azure_automation_schedule_name" {
   }
 }
 
-variable "azure_automation_schedule_start_time" {
-  type        = string
-  description = "(Optional) RFC3339 UTC start time for the Azure Automation schedule."
-  default     = "2026-03-19T00:37:00Z"
-
-  validation {
-    condition     = can(regex("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$", var.azure_automation_schedule_start_time))
-    error_message = "`azure_automation_schedule_start_time` must be in RFC3339 UTC format like 2026-03-19T00:37:00Z."
-  }
-}
-
 variable "azure_automation_schedule_timezone" {
   type        = string
   description = "(Optional) Azure Automation schedule timezone."

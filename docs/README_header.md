@@ -147,10 +147,10 @@ This method uses workload identity (JWT/OIDC) to generate short-lived Vault toke
 
 Use environment variables to authenticate with a static Vault token:
 
-- **TFC\_VAULT\_PROVIDER\_AUTH**: Set the `TFC_VAULT_PROVIDER_AUTH` environment variable to `true`.
-- **TFC\_VAULT\_ADDR**: Set the `TFC_VAULT_ADDR` environment variable to your Vault server address (e.g., `https://vault.example.com:8200`)
-- **TFC\_VAULT\_NAMESPACE**: (Optional) Set the `TFC_VAULT_NAMESPACE` environment variable to the parent namespace where the module will create the sub-namespace (e.g., `admin`). If not set, the namespace will be created at the root level.
-- **TFC\_VAULT\_RUN\_ROLE**: Set the `TFC_VAULT_RUN_ROLE` environment variable to the JWT role name configured in Vault (e.g., `hcp-terraform`)
+- **TFC_VAULT_PROVIDER_AUTH**: Set the `TFC_VAULT_PROVIDER_AUTH` environment variable to `true`.
+- **TFC_VAULT_ADDR**: Set the `TFC_VAULT_ADDR` environment variable to your Vault server address (for example `https://vault.example.com:8200`).
+- **TFC_VAULT_NAMESPACE**: (Optional) Set the `TFC_VAULT_NAMESPACE` environment variable to the parent namespace where the module will create the sub-namespace (for example `admin`). If not set, the namespace will be created at the root level.
+- **TFC_VAULT_RUN_ROLE**: Set the `TFC_VAULT_RUN_ROLE` environment variable to the JWT role name configured in Vault (for example `hcp-terraform`).
 
 **Documentation:**
 
@@ -163,13 +163,13 @@ The Azure Automation runbook authenticates to Vault using AppRole credentials pa
 
 **Required automation variables:**
 
-- **VAULT_ADDR**: Vault address (e.g., `https://vault.example.com:8200`)
+- **VAULT_ADDR**: Vault address (for example `https://vault.example.com:8200`)
 - **VAULT_NAMESPACE**: Vault namespace (if applicable)
 - **VAULT_AUTH_PATH**: AppRole auth mount path (default: `approle`)
 - **VAULT_APPROLE_ROLE_ID**: AppRole role ID
 - **VAULT_APPROLE_SECRET_ID**: AppRole secret ID
-- **VAULT_PKI_PATH**: PKI mount path (e.g., `pki-int`)
-- **VAULT_PKI_ROLE**: PKI role name (e.g., `gw-cert-issuer`)
+- **VAULT_PKI_PATH**: PKI mount path (for example `pki-int`)
+- **VAULT_PKI_ROLE**: PKI role name (for example `gw-cert-issuer`)
 
 ## Demo Cleanup Note
 

@@ -148,10 +148,10 @@ This method uses workload identity (JWT/OIDC) to generate short-lived Vault toke
 
 Use environment variables to authenticate with a static Vault token:
 
-- **TFC\\_VAULT\\_PROVIDER\\_AUTH**: Set the `TFC_VAULT_PROVIDER_AUTH` environment variable to `true`.
-- **TFC\\_VAULT\\_ADDR**: Set the `TFC_VAULT_ADDR` environment variable to your Vault server address (e.g., `https://vault.example.com:8200`)
-- **TFC\\_VAULT\\_NAMESPACE**: (Optional) Set the `TFC_VAULT_NAMESPACE` environment variable to the parent namespace where the module will create the sub-namespace (e.g., `admin`). If not set, the namespace will be created at the root level.
-- **TFC\\_VAULT\\_RUN\\_ROLE**: Set the `TFC_VAULT_RUN_ROLE` environment variable to the JWT role name configured in Vault (e.g., `hcp-terraform`)
+- **TFC\_VAULT\_PROVIDER\_AUTH**: Set the `TFC_VAULT_PROVIDER_AUTH` environment variable to `true`.
+- **TFC\_VAULT\_ADDR**: Set the `TFC_VAULT_ADDR` environment variable to your Vault server address (for example `https://vault.example.com:8200`).
+- **TFC\_VAULT\_NAMESPACE**: (Optional) Set the `TFC_VAULT_NAMESPACE` environment variable to the parent namespace where the module will create the sub-namespace (for example `admin`). If not set, the namespace will be created at the root level.
+- **TFC\_VAULT\_RUN\_ROLE**: Set the `TFC_VAULT_RUN_ROLE` environment variable to the JWT role name configured in Vault (for example `hcp-terraform`).
 
 **Documentation:**
 
@@ -164,13 +164,13 @@ The Azure Automation runbook authenticates to Vault using AppRole credentials pa
 
 **Required automation variables:**
 
-- **VAULT\_ADDR**: Vault address (e.g., `https://vault.example.com:8200`)
+- **VAULT\_ADDR**: Vault address (for example `https://vault.example.com:8200`)
 - **VAULT\_NAMESPACE**: Vault namespace (if applicable)
 - **VAULT\_AUTH\_PATH**: AppRole auth mount path (default: `approle`)
 - **VAULT\_APPROLE\_ROLE\_ID**: AppRole role ID
 - **VAULT\_APPROLE\_SECRET\_ID**: AppRole secret ID
-- **VAULT\_PKI\_PATH**: PKI mount path (e.g., `pki-int`)
-- **VAULT\_PKI\_ROLE**: PKI role name (e.g., `gw-cert-issuer`)
+- **VAULT\_PKI\_PATH**: PKI mount path (for example `pki-int`)
+- **VAULT\_PKI\_ROLE**: PKI role name (for example `gw-cert-issuer`)
 
 ## Demo Cleanup Note
 
@@ -204,12 +204,6 @@ The following Modules are called:
 Source: app.terraform.io/benoitblais-hashicorp/keyvault/azurerm
 
 Version: 0.0.1
-
-### <a name="module_storage_account"></a> [storage\_account](#module\_storage\_account)
-
-Source: app.terraform.io/benoitblais-hashicorp/storage-account/azurerm
-
-Version: 0.0.4
 
 ## Required Inputs
 
@@ -474,14 +468,6 @@ Description: (Optional) Azure Automation schedule name used for runbook recurren
 Type: `string`
 
 Default: `"hourly-certificate-renewal"`
-
-### <a name="input_azure_automation_schedule_start_time"></a> [azure\_automation\_schedule\_start\_time](#input\_azure\_automation\_schedule\_start\_time)
-
-Description: (Optional) RFC3339 UTC start time for the Azure Automation schedule.
-
-Type: `string`
-
-Default: `"2026-03-19T00:37:00Z"`
 
 ### <a name="input_azure_automation_schedule_timezone"></a> [azure\_automation\_schedule\_timezone](#input\_azure\_automation\_schedule\_timezone)
 
@@ -758,75 +744,17 @@ Default:
 The following resources are used by this module:
 
 - [azurerm_application_gateway.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/application_gateway) (resource)
-- [azurerm_automation_account.certificate_renewal](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_account) (resource)
-- [azurerm_automation_job_schedule.certificate_renewal](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_job_schedule) (resource)
-- [azurerm_automation_python3_package.cryptography](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_python3_package) (resource)
-- [azurerm_automation_runbook.certificate_renewal](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_runbook) (resource)
-- [azurerm_automation_schedule.certificate_renewal](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_schedule) (resource)
-- [azurerm_automation_variable_string.app_gateway_name](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
-- [azurerm_automation_variable_string.app_gateway_resource_group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
-- [azurerm_automation_variable_string.app_gateway_ssl_cert_name](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
-- [azurerm_automation_variable_string.cert_common_name](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
-- [azurerm_automation_variable_string.cert_ttl](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
-- [azurerm_automation_variable_string.key_vault_cert_name](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
-- [azurerm_automation_variable_string.key_vault_name](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
-- [azurerm_automation_variable_string.pfx_password](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
-- [azurerm_automation_variable_string.subscription_id](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
-- [azurerm_automation_variable_string.vault_addr](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
-- [azurerm_automation_variable_string.vault_approle_role_id](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
-- [azurerm_automation_variable_string.vault_approle_secret_id](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
-- [azurerm_automation_variable_string.vault_auth_path](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
-- [azurerm_automation_variable_string.vault_namespace](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
-- [azurerm_automation_variable_string.vault_pki_path](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
-- [azurerm_automation_variable_string.vault_pki_role](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
-- [azurerm_automation_variable_string.vault_tls_skip_verify](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) (resource)
 - [azurerm_key_vault_certificate.bootstrap](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_certificate) (resource)
 - [azurerm_public_ip.app_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
-- [azurerm_role_assignment.automation_app_gateway_update](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
 - [azurerm_subnet.app_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_user_assigned_identity.app_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
 - [azurerm_virtual_network.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
-- [random_password.bootstrap_pfx_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) (resource)
-- [vault_approle_auth_backend_role.workload](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/approle_auth_backend_role) (resource)
-- [vault_approle_auth_backend_role_secret_id.workload](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/approle_auth_backend_role_secret_id) (resource)
-- [vault_auth_backend.approle](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/auth_backend) (resource)
-- [vault_pki_secret_backend_role.bootstrap](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/pki_secret_backend_role) (resource)
-- [vault_policy.workload_pki_issue](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/policy) (resource)
 - [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
-- [azurerm_storage_account_sas.automation_packages](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/storage_account_sas) (data source)
 
 ## Outputs
 
-The following outputs are exported:
-
-### <a name="output_application_gateway_name"></a> [application\_gateway\_name](#output\_application\_gateway\_name)
-
-Description: Application Gateway name receiving TLS certificate updates from Key Vault
-
-### <a name="output_application_gateway_public_ip"></a> [application\_gateway\_public\_ip](#output\_application\_gateway\_public\_ip)
-
-Description: Public IP address of the Application Gateway
-
-### <a name="output_azure_automation_account_name"></a> [azure\_automation\_account\_name](#output\_azure\_automation\_account\_name)
-
-Description: Azure Automation Account name for certificate renewal. Null when Azure Automation is disabled.
-
-### <a name="output_azure_automation_runbook_name"></a> [azure\_automation\_runbook\_name](#output\_azure\_automation\_runbook\_name)
-
-Description: Azure Automation runbook name for certificate renewal. Null when Azure Automation is disabled.
-
-### <a name="output_key_vault_certificate_name"></a> [key\_vault\_certificate\_name](#output\_key\_vault\_certificate\_name)
-
-Description: Certificate name in Azure Key Vault updated by the renewal automation
-
-### <a name="output_key_vault_name"></a> [key\_vault\_name](#output\_key\_vault\_name)
-
-Description: Azure Key Vault name storing the TLS certificate
-
-### <a name="output_resource_group_name"></a> [resource\_group\_name](#output\_resource\_group\_name)
-
-Description: Resource group that contains the demo resources
+No outputs.
 
 <!-- markdownlint-enable -->
 # External Documentation
